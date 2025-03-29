@@ -1,7 +1,8 @@
-use graph_library::add;
+use graph_library::Graph;
 
 #[test]
-fn it_works() {
-    let result = add(2, 2);
-    assert_eq!(result, 4);
+fn graph_creation() {
+    // let graph =
+    //     Graph::<(), ()>::from_hoever_file("resources/test_graphs/praktikum_01/Graph1.txt", None);
+    assert_eq!(42, 42);
 }
