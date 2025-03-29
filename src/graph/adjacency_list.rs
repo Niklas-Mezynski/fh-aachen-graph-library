@@ -25,7 +25,7 @@ impl<VId, Vertex: WithID<Vertex, VId>, Edge> GraphInterface<VId, Vertex, Edge>
 where
     VId: Debug + Eq + Hash,
     Vertex: Debug,
-    Edge: Debug,
+    Edge: Debug + Clone,
 {
     fn push_vertex(&mut self, vertex: Vertex) {
         self.vertices.insert(vertex.get_id(), vertex);
@@ -34,5 +34,14 @@ where
     fn push_edge(&mut self, from: &Vertex, to: &Vertex, edge: Edge) {
         let curr_adjacency_list = self.adjacency.entry(from.get_id()).or_default();
         curr_adjacency_list.push((to.get_id(), edge));
+    }
+
+    fn push_undirected_edge(&mut self, from: &Vertex, to: &Vertex, edge: Edge) {
+        self.push_edge(from, to, edge.clone());
+        self.push_edge(to, from, edge);
+    }
+
+    fn get_all_vertices(&self) -> Vec<&Vertex> {
+        self.vertices.values().collect()
     }
 }

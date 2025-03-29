@@ -1,10 +1,12 @@
 use std::fmt::Debug;
 
 use std::fs::File;
+use std::hash::Hash;
 use std::io::{self, BufRead};
-use std::path::Path;
 
 use rustc_hash::FxHashSet;
+
+use crate::graph::adjacency_list::AdjacencyListGraph;
 
 use super::traits::{GraphInterface, WithID};
 
@@ -22,30 +24,63 @@ impl WithID<Vertex, VertexIDType> for Vertex {
 }
 
 #[derive(Debug)]
-pub struct Graph<VId, Vertex: WithID<Vertex, VId>, Edge> {
-    backend: dyn GraphInterface<VId, Vertex, Edge>,
+pub struct Graph<VId = VertexIDType, VertexT = Vertex, Edge = ()>
+where
+    VId: 'static,
+    VertexT: WithID<VertexT, VId> + 'static,
+    Edge: 'static,
+{
+    backend: Box<dyn GraphInterface<VId, VertexT, Edge>>,
 }
 
-impl<Edge> Graph<VertexIDType, Vertex, Edge>
+impl<VId, Vertex: WithID<Vertex, VId>, Edge> Graph<VId, Vertex, Edge>
 where
-    Self: Sized,
+    VId: Debug + Eq + Hash,
+    Vertex: Debug,
+    Edge: Debug + Clone,
 {
     /// Creates a new graph, from given vertices and edges
+    ///
+    /// Here I can also make decisions about which graph backend to use
     pub fn from(
-        n_vertices: VertexIDType,
+        n_vertices: VertexIDType, // Could be used for pre-allocating memory or hashmap capacity
         vertices: Vec<Vertex>,
         edges: Vec<(Vertex, Vertex, Edge)>,
         directed: bool,
     ) -> Self {
-        todo!()
-    }
+        let mut graph = Graph::<VId, Vertex, Edge> {
+            backend: Box::new(AdjacencyListGraph::new()),
+        };
 
+        vertices
+            .into_iter()
+            .for_each(|v| graph.backend.push_vertex(v));
+
+        edges
+            .into_iter()
+            .for_each(|(from, to, edge)| match directed {
+                true => graph.backend.push_edge(&from, &to, edge),
+                false => graph.backend.push_undirected_edge(&from, &to, edge),
+            });
+
+        graph
+    }
+}
+
+impl<Edge> Graph<VertexIDType, Vertex, Edge>
+where
+    Edge: Debug + Clone,
+{
     /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
     ///
     /// Format:
     /// - Erste Zeile: Knotenanzahl
     /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
-    pub fn from_hoever_file(path: &str, edge_builder: fn(remaining: Vec<&str>) -> Edge) -> Self {
+    pub fn from_hoever_file_with_weights(
+        path: &str,
+        directed: bool,
+        edge_builder: fn(remaining: Vec<&str>) -> Edge,
+    ) -> Self {
         // Read the file line by line
         // Open the file in read-only mode.
         let file = File::open(path).expect("File must exist");
@@ -106,7 +141,42 @@ where
             n_vertices.expect("Must exist at this point"),
             vertices,
             edges,
-            false, // TODO: Figure out when to set this
+            directed,
         )
+    }
+}
+
+impl Graph<VertexIDType, Vertex, ()> {
+    /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
+    ///
+    /// Format:
+    /// - Erste Zeile: Knotenanzahl
+    /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
+    pub fn from_hoever_file(path: &str, directed: bool) -> Self {
+        Graph::from_hoever_file_with_weights(path, directed, |_| ())
+    }
+}
+
+impl<VId, Vertex: WithID<Vertex, VId>, Edge> GraphInterface<VId, Vertex, Edge>
+    for Graph<VId, Vertex, Edge>
+where
+    VId: Debug + Eq + Hash,
+    Vertex: Debug,
+    Edge: Debug + Clone,
+{
+    fn push_vertex(&mut self, vertex: Vertex) {
+        self.backend.push_vertex(vertex);
+    }
+
+    fn push_edge(&mut self, from: &Vertex, to: &Vertex, edge: Edge) {
+        self.backend.push_edge(from, to, edge);
+    }
+
+    fn push_undirected_edge(&mut self, from: &Vertex, to: &Vertex, edge: Edge) {
+        self.backend.push_undirected_edge(from, to, edge);
+    }
+
+    fn get_all_vertices(&self) -> Vec<&Vertex> {
+        self.backend.get_all_vertices()
     }
 }
