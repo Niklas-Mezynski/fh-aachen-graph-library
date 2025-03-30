@@ -57,6 +57,7 @@ where
             for v in neighbors {
                 let vid = v.get_id();
                 if !self.visited.contains(&vid) {
+                    self.visited.insert(vid);
                     self.queue.push_back(vid);
                 }
             }
