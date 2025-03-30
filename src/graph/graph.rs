@@ -9,6 +9,7 @@ use rustc_hash::FxHashSet;
 use crate::graph::adjacency_list::AdjacencyListGraph;
 
 use super::error::GraphError;
+use super::error::ParsingError;
 use super::traits::{GraphInterface, WithID};
 
 pub type VertexIDType = u32;
@@ -44,7 +45,7 @@ where
     ///
     /// Here I can also make decisions about which graph backend to use
     pub fn from(
-        n_vertices: VertexIDType, // Could be used for pre-allocating memory or hashmap capacity
+        _n_vertices: VertexIDType, // Could be used for pre-allocating memory or hashmap capacity
         vertices: Vec<Vertex>,
         edges: Vec<(VId, VId, Edge)>,
         directed: bool,
@@ -82,9 +83,8 @@ where
         directed: bool,
         edge_builder: fn(remaining: Vec<&str>) -> Edge,
     ) -> Result<Self, GraphError<VertexIDType>> {
-        // Read the file line by line
         // Open the file in read-only mode.
-        let file = File::open(path).expect("File must exist");
+        let file = File::open(path).map_err(GraphError::IoError)?;
 
         // Read the file line by line, and return an iterator of the lines.
         let reader = io::BufReader::new(file);
@@ -95,32 +95,57 @@ where
         let mut edges: Vec<(VertexIDType, VertexIDType, Edge)> = vec![];
 
         for (line_number, line) in reader.lines().enumerate() {
-            let line = line.unwrap_or_else(|_| panic!("Error reading line {}", line_number));
+            let line = line.map_err(GraphError::IoError)?;
 
             match line_number {
                 // Parse first line (Number of vertices)
                 0 => {
                     n_vertices = Some(
                         line.parse::<VertexIDType>()
-                            .expect("First line must be an integer (i.e. the number of vertices)"),
-                    )
+                            .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?,
+                    );
+
+                    if n_vertices.unwrap() == 0 {
+                        return Err(GraphError::InvalidFormat(
+                            "Number of vertices must be greater than 0".to_string(),
+                        ));
+                    }
                 }
                 // Parse edges
                 _ => {
-                    let mut parsed_line = line.split("\t");
+                    let mut parsed_line = line.split('\t');
 
-                    fn get_next_vertex_id(
-                        parsed_line: &mut std::str::Split<'_, &str>,
-                    ) -> VertexIDType {
-                        parsed_line
-                            .next()
-                            .expect("Each edge must contain at least two values")
-                            .parse::<VertexIDType>()
-                            .expect("Edges must be represented by integer pairs")
+                    let from = parsed_line
+                        .next()
+                        .ok_or_else(|| {
+                            GraphError::InvalidFormat(
+                                "Missing 'from' vertex id in edge definition".to_string(),
+                            )
+                        })?
+                        .parse::<VertexIDType>()
+                        .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
+
+                    let to = parsed_line
+                        .next()
+                        .ok_or_else(|| {
+                            GraphError::InvalidFormat(
+                                "Missing 'to' vertex id in edge definition".to_string(),
+                            )
+                        })?
+                        .parse::<VertexIDType>()
+                        .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
+
+                    // Check if vertex IDs are within valid range
+                    if let Some(n) = n_vertices {
+                        if from >= n || to >= n {
+                            return Err(GraphError::InvalidFormat(format!(
+                                "Vertex ID out of range: expected 0-{}, got {} or {}",
+                                n - 1,
+                                from,
+                                to
+                            )));
+                        }
                     }
-
-                    let from = get_next_vertex_id(&mut parsed_line);
-                    let to = get_next_vertex_id(&mut parsed_line);
 
                     let edge = edge_builder(parsed_line.collect::<Vec<&str>>());
 
@@ -138,12 +163,17 @@ where
             }
         }
 
-        Graph::from(
-            n_vertices.expect("Must exist at this point"),
-            vertices,
-            edges,
-            directed,
-        )
+        if n_vertices.is_none() {
+            return Err(GraphError::InvalidFormat("Empty file".to_string()));
+        }
+
+        if edges.is_empty() {
+            return Err(GraphError::InvalidFormat(
+                "No edges found in file".to_string(),
+            ));
+        }
+
+        Graph::from(n_vertices.unwrap(), vertices, edges, directed)
     }
 }
 
