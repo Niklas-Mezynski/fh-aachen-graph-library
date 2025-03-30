@@ -1,5 +1,6 @@
-mod algorithms;
-mod graph;
+pub mod algorithms;
+pub mod graph;
 
-pub use graph::traits;
-pub use graph::Graph;
+// Re-export main types and traits
+pub use crate::graph::traits::{GraphInterface, WithID};
+pub use crate::graph::Graph;

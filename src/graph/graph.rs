@@ -10,7 +10,8 @@ use crate::graph::adjacency_list::AdjacencyListGraph;
 
 use super::error::GraphError;
 use super::error::ParsingError;
-use super::traits::{GraphInterface, WithID};
+use super::traits::GraphInterface;
+use super::traits::WithID;
 
 pub type VertexIDType = u32;
 
@@ -66,6 +67,36 @@ where
             })?;
 
         Ok(graph)
+    }
+
+    // Implement the public facing methods (same as in the GraphInterface trait)
+    pub fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
+        self.backend.push_vertex(vertex)
+    }
+
+    pub fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
+        self.backend.push_edge(from, to, edge)
+    }
+
+    pub fn push_undirected_edge(
+        &mut self,
+        from: VId,
+        to: VId,
+        edge: Edge,
+    ) -> Result<(), GraphError<VId>> {
+        self.backend.push_undirected_edge(from, to, edge)
+    }
+
+    pub fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+        self.backend.get_vertex_by_id(vertex_id)
+    }
+
+    pub fn get_all_vertices(&self) -> Vec<&Vertex> {
+        self.backend.get_all_vertices()
+    }
+
+    pub fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+        self.backend.get_adjacent_vertices(vertex)
     }
 }
 
@@ -185,34 +216,5 @@ impl Graph<VertexIDType, Vertex, ()> {
     /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
     pub fn from_hoever_file(path: &str, directed: bool) -> Result<Self, GraphError<VertexIDType>> {
         Graph::from_hoever_file_with_weights(path, directed, |_| ())
-    }
-}
-
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> GraphInterface<VId, Vertex, Edge>
-    for Graph<VId, Vertex, Edge>
-where
-    VId: Debug + Eq + Hash,
-    Vertex: Debug,
-    Edge: Debug + Clone,
-{
-    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
-        self.backend.push_vertex(vertex)
-    }
-
-    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
-        self.backend.push_edge(from, to, edge)
-    }
-
-    fn push_undirected_edge(
-        &mut self,
-        from: VId,
-        to: VId,
-        edge: Edge,
-    ) -> Result<(), GraphError<VId>> {
-        self.backend.push_undirected_edge(from, to, edge)
-    }
-
-    fn get_all_vertices(&self) -> Vec<&Vertex> {
-        self.backend.get_all_vertices()
     }
 }

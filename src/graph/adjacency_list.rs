@@ -72,7 +72,34 @@ where
         Ok(())
     }
 
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+        self.vertices
+            .get(vertex_id)
+            .ok_or(GraphError::VertexNotFound(*vertex_id))
+    }
+
     fn get_all_vertices(&self) -> Vec<&Vertex> {
         self.vertices.values().collect()
+    }
+
+    fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+        if !self.vertices.contains_key(&vertex) {
+            return Err(GraphError::VertexNotFound(vertex));
+        }
+
+        Ok(self
+            .adjacency
+            .get(&vertex)
+            .map(|edges| {
+                edges
+                    .iter()
+                    .map(|(to_id, _)| {
+                        self.vertices
+                            .get(to_id)
+                            .expect("All edges must connect to existing vertices")
+                    })
+                    .collect()
+            })
+            .unwrap_or_default())
     }
 }

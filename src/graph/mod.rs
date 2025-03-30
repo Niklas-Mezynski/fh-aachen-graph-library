@@ -5,4 +5,5 @@ mod adjacency_list;
 mod error;
 pub mod traits;
 
-pub use graph::*;
+pub use graph::{Graph, Vertex, VertexIDType};
+pub use traits::{GraphInterface, WithID};

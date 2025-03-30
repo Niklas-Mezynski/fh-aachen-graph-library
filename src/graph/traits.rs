@@ -34,8 +34,11 @@ pub trait GraphInterface<VId, Vertex: WithID<Vertex, VId>, Edge>: Debug {
     ) -> Result<(), GraphError<VId>>;
 
     // Graph queries
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>>;
+    /// Get all vertices in the graph
     fn get_all_vertices(&self) -> Vec<&Vertex>;
+    /// Get All direct neighbors
+    fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
     // fn has_vertex(&self, vertex: &Vertex) -> bool;
     // fn has_edge(&self, from: &Vertex, to: &Vertex) -> bool;
-    // fn neighbors(&self, vertex: &Vertex) -> Vec<&Vertex>;
 }
