@@ -2,7 +2,7 @@
 mod graph;
 
 mod adjacency_list;
-mod error;
+pub mod error;
 pub mod traits;
 
 pub use graph::{Graph, Vertex, VertexIDType};

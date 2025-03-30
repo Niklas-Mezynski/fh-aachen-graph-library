@@ -38,6 +38,9 @@ pub trait GraphInterface<VId, Vertex: WithID<Vertex, VId>, Edge>: Debug {
     /// Get all vertices in the graph
     fn get_all_vertices(&self) -> Vec<&Vertex>;
     /// Get All direct neighbors
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
     fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
     // fn has_vertex(&self, vertex: &Vertex) -> bool;
     // fn has_edge(&self, from: &Vertex, to: &Vertex) -> bool;

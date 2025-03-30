@@ -1,4 +1,4 @@
-use graph_library::Graph;
+use graph_library::{Graph, GraphInterface};
 
 #[test]
 fn create_from_file() {
