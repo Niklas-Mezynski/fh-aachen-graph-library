@@ -8,9 +8,10 @@ use rustc_hash::FxHashSet;
 
 use crate::graph::adjacency_list::AdjacencyListGraph;
 
+use super::error::GraphError;
 use super::traits::{GraphInterface, WithID};
 
-type VertexIDType = u32;
+pub type VertexIDType = u32;
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
@@ -35,7 +36,7 @@ where
 
 impl<VId, Vertex: WithID<Vertex, VId>, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Debug + Eq + Hash,
+    VId: Debug + Eq + Hash + Copy,
     Vertex: Debug,
     Edge: Debug + Clone,
 {
@@ -45,25 +46,25 @@ where
     pub fn from(
         n_vertices: VertexIDType, // Could be used for pre-allocating memory or hashmap capacity
         vertices: Vec<Vertex>,
-        edges: Vec<(Vertex, Vertex, Edge)>,
+        edges: Vec<(VId, VId, Edge)>,
         directed: bool,
-    ) -> Self {
+    ) -> Result<Self, GraphError<VId>> {
         let mut graph = Graph::<VId, Vertex, Edge> {
             backend: Box::new(AdjacencyListGraph::new()),
         };
 
         vertices
             .into_iter()
-            .for_each(|v| graph.backend.push_vertex(v));
+            .try_for_each(|v| graph.backend.push_vertex(v))?;
 
         edges
             .into_iter()
-            .for_each(|(from, to, edge)| match directed {
-                true => graph.backend.push_edge(&from, &to, edge),
-                false => graph.backend.push_undirected_edge(&from, &to, edge),
-            });
+            .try_for_each(|(from, to, edge)| match directed {
+                true => graph.backend.push_edge(from, to, edge),
+                false => graph.backend.push_undirected_edge(from, to, edge),
+            })?;
 
-        graph
+        Ok(graph)
     }
 }
 
@@ -80,7 +81,7 @@ where
         path: &str,
         directed: bool,
         edge_builder: fn(remaining: Vec<&str>) -> Edge,
-    ) -> Self {
+    ) -> Result<Self, GraphError<VertexIDType>> {
         // Read the file line by line
         // Open the file in read-only mode.
         let file = File::open(path).expect("File must exist");
@@ -91,7 +92,7 @@ where
         let mut n_vertices = None;
         let mut vertices: Vec<Vertex> = vec![];
         let mut vertex_ids: FxHashSet<VertexIDType> = FxHashSet::default();
-        let mut edges: Vec<(Vertex, Vertex, Edge)> = vec![];
+        let mut edges: Vec<(VertexIDType, VertexIDType, Edge)> = vec![];
 
         for (line_number, line) in reader.lines().enumerate() {
             let line = line.unwrap_or_else(|_| panic!("Error reading line {}", line_number));
@@ -132,7 +133,7 @@ where
                         vertices.push(Vertex { id: to });
                     }
 
-                    edges.push((Vertex { id: from }, Vertex { id: to }, edge));
+                    edges.push((from, to, edge));
                 }
             }
         }
@@ -152,7 +153,7 @@ impl Graph<VertexIDType, Vertex, ()> {
     /// Format:
     /// - Erste Zeile: Knotenanzahl
     /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
-    pub fn from_hoever_file(path: &str, directed: bool) -> Self {
+    pub fn from_hoever_file(path: &str, directed: bool) -> Result<Self, GraphError<VertexIDType>> {
         Graph::from_hoever_file_with_weights(path, directed, |_| ())
     }
 }
@@ -164,16 +165,21 @@ where
     Vertex: Debug,
     Edge: Debug + Clone,
 {
-    fn push_vertex(&mut self, vertex: Vertex) {
-        self.backend.push_vertex(vertex);
+    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
+        self.backend.push_vertex(vertex)
     }
 
-    fn push_edge(&mut self, from: &Vertex, to: &Vertex, edge: Edge) {
-        self.backend.push_edge(from, to, edge);
+    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
+        self.backend.push_edge(from, to, edge)
     }
 
-    fn push_undirected_edge(&mut self, from: &Vertex, to: &Vertex, edge: Edge) {
-        self.backend.push_undirected_edge(from, to, edge);
+    fn push_undirected_edge(
+        &mut self,
+        from: VId,
+        to: VId,
+        edge: Edge,
+    ) -> Result<(), GraphError<VId>> {
+        self.backend.push_undirected_edge(from, to, edge)
     }
 
     fn get_all_vertices(&self) -> Vec<&Vertex> {
