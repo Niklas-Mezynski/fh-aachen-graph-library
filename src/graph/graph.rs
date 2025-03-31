@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-
 use std::fs::{self};
 use std::hash::Hash;
 
@@ -26,18 +25,18 @@ impl WithID<Vertex, VertexIDType> for Vertex {
 #[derive(Debug)]
 pub struct Graph<VId = VertexIDType, VertexT = Vertex, Edge = ()>
 where
-    VId: 'static,
+    VId: Eq + Hash + Copy + 'static,
     VertexT: WithID<VertexT, VId> + 'static,
     Edge: 'static,
 {
     backend: Box<dyn GraphInterface<VId, VertexT, Edge>>,
 }
 
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> Graph<VId, Vertex, Edge>
+impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Debug + Eq + Hash + Copy,
-    Vertex: Debug,
-    Edge: Debug + Clone,
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<Vertex, VId> + Debug,
+    Edge: Clone + Debug,
 {
     /// Creates a new graph, from given vertices and edges
     ///
@@ -69,7 +68,7 @@ where
 
 impl<Edge> Graph<VertexIDType, Vertex, Edge>
 where
-    Edge: Debug + Clone,
+    Edge: Clone + Debug,
 {
     /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
     ///
@@ -166,23 +165,31 @@ impl Graph<VertexIDType, Vertex, ()> {
     }
 }
 
-// Implement the public facing methods (same as in the GraphInterface trait)
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> GraphInterface<VId, Vertex, Edge>
-    for Graph<VId, Vertex, Edge>
+// Implement the public facing methods directly on Graph
+impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Debug + Eq + Hash,
-    Vertex: Debug,
-    Edge: Debug + Clone,
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<Vertex, VId>,
+    Edge: Clone,
 {
-    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
+    /// Adds a new vertex to the graph
+    ///
+    /// See [`GraphInterface::push_vertex`] for details
+    pub fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
         self.backend.push_vertex(vertex)
     }
 
-    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
+    /// Adds a new directed edge between two vertices
+    ///
+    /// See [`GraphInterface::push_edge`] for details
+    pub fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
         self.backend.push_edge(from, to, edge)
     }
 
-    fn push_undirected_edge(
+    /// Adds an undirected edge (edges in both directions) between two vertices
+    ///
+    /// See [`GraphInterface::push_undirected_edge`] for details
+    pub fn push_undirected_edge(
         &mut self,
         from: VId,
         to: VId,
@@ -191,15 +198,24 @@ where
         self.backend.push_undirected_edge(from, to, edge)
     }
 
-    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+    /// Gets a vertex by its ID
+    ///
+    /// See [`GraphInterface::get_vertex_by_id`] for details
+    pub fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
         self.backend.get_vertex_by_id(vertex_id)
     }
 
-    fn get_all_vertices(&self) -> Vec<&Vertex> {
+    /// Get all vertices in the graph
+    ///
+    /// See [`GraphInterface::get_all_vertices`] for details
+    pub fn get_all_vertices(&self) -> Vec<&Vertex> {
         self.backend.get_all_vertices()
     }
 
-    fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+    /// Get all direct neighbors of a vertex
+    ///
+    /// See [`GraphInterface::get_adjacent_vertices`] for details
+    pub fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         self.backend.get_adjacent_vertices(vertex)
     }
 }

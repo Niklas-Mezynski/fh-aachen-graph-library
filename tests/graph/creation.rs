@@ -1,4 +1,4 @@
-use graph_library::{Graph, GraphInterface};
+use graph_library::Graph;
 use rstest::rstest;
 
 #[rstest]

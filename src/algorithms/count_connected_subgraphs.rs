@@ -2,13 +2,13 @@ use std::{collections::VecDeque, fmt::Debug, hash::Hash};
 
 use rustc_hash::FxHashSet;
 
-use crate::{graph::WithID, Graph, GraphError, GraphInterface};
+use crate::{graph::WithID, Graph, GraphError};
 
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> Graph<VId, Vertex, Edge>
+impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Debug + Eq + Hash + Copy,
-    Vertex: Debug,
-    Edge: Debug + Clone,
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<Vertex, VId>,
+    Edge: Clone,
 {
     pub fn count_connected_subgraphs(&self) -> Result<u32, GraphError<VId>> {
         let mut vertices = VecDeque::from(self.get_all_vertices());

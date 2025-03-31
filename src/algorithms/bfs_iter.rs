@@ -2,11 +2,11 @@ use std::{collections::VecDeque, fmt::Debug, hash::Hash};
 
 use rustc_hash::FxHashSet;
 
-use crate::{graph::WithID, Graph, GraphError, GraphInterface};
+use crate::{graph::WithID, Graph, GraphError};
 
 pub struct BfsIterator<'a, VId, Vertex, Edge>
 where
-    VId: 'static + Debug + Eq + Hash,
+    VId: Eq + Hash + Copy + 'static,
     Vertex: WithID<Vertex, VId> + 'static,
     Edge: 'static,
 {
@@ -17,9 +17,9 @@ where
 
 impl<'a, VId, Vertex, Edge> BfsIterator<'a, VId, Vertex, Edge>
 where
-    VId: 'static + Debug + Eq + Hash + Copy,
-    Vertex: 'static + WithID<Vertex, VId> + Debug,
-    Edge: 'static + Debug + Clone,
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<Vertex, VId>,
+    Edge: Clone,
 {
     fn new(
         graph: &'a Graph<VId, Vertex, Edge>,
@@ -42,9 +42,9 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for BfsIterator<'a, VId, Vertex, Edge>
 where
-    VId: 'static + Debug + Eq + Hash + Copy,
-    Vertex: 'static + WithID<Vertex, VId> + Debug,
-    Edge: 'static + Debug + Clone,
+    VId: Eq + Hash + Copy + Debug + 'static,
+    Vertex: WithID<Vertex, VId> + 'static,
+    Edge: Clone + 'static,
 {
     type Item = &'a Vertex;
 
@@ -72,11 +72,11 @@ where
     }
 }
 
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> Graph<VId, Vertex, Edge>
+impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Debug + Eq + Hash + Copy,
-    Vertex: Debug,
-    Edge: Debug + Clone,
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<Vertex, VId>,
+    Edge: Clone,
 {
     pub fn bfs_iter(
         &self,
