@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use std::fs::File;
+use std::fs::{self, File};
 use std::hash::Hash;
 use std::io::{self, BufRead};
 
@@ -83,81 +83,68 @@ where
         edge_builder: fn(remaining: Vec<&str>) -> Edge,
     ) -> Result<Self, GraphError<VertexIDType>> {
         // Open the file in read-only mode.
-        let file = File::open(path).map_err(GraphError::IoError)?;
+        let file_contents = fs::read_to_string(path).map_err(GraphError::IoError)?;
+        let mut line_iter = file_contents.lines();
 
-        // Read the file line by line, and return an iterator of the lines.
-        let reader = io::BufReader::new(file);
+        // Parse first line (number of vertices)
+        let n_vertices = line_iter
+            .next()
+            .ok_or_else(|| {
+                GraphError::InvalidFormat(
+                    "The file must contain at least one line with the number of edges".to_string(),
+                )
+            })?
+            .parse::<VertexIDType>()
+            .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
 
-        let mut n_vertices = None;
-        let mut vertices = vec![];
+        if n_vertices == 0 {
+            return Err(GraphError::InvalidFormat(
+                "Number of vertices must be greater than 0".to_string(),
+            ));
+        }
+
         let mut edges: Vec<(VertexIDType, VertexIDType, Edge)> = vec![];
 
-        for (line_number, line) in reader.lines().enumerate() {
-            let line = line.map_err(GraphError::IoError)?;
+        for line in line_iter {
+            let mut parsed_line = line.split('\t');
 
-            match line_number {
-                // Parse first line (Number of vertices)
-                0 => {
-                    n_vertices = Some(
-                        line.parse::<VertexIDType>()
-                            .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?,
-                    );
+            let from = parsed_line
+                .next()
+                .ok_or_else(|| {
+                    GraphError::InvalidFormat(
+                        "Missing 'from' vertex id in edge definition".to_string(),
+                    )
+                })?
+                .parse::<VertexIDType>()
+                .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
 
-                    if n_vertices.unwrap() == 0 {
-                        return Err(GraphError::InvalidFormat(
-                            "Number of vertices must be greater than 0".to_string(),
-                        ));
-                    }
-                }
-                // Parse edges
-                _ => {
-                    let mut parsed_line = line.split('\t');
+            let to = parsed_line
+                .next()
+                .ok_or_else(|| {
+                    GraphError::InvalidFormat(
+                        "Missing 'to' vertex id in edge definition".to_string(),
+                    )
+                })?
+                .parse::<VertexIDType>()
+                .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
 
-                    let from = parsed_line
-                        .next()
-                        .ok_or_else(|| {
-                            GraphError::InvalidFormat(
-                                "Missing 'from' vertex id in edge definition".to_string(),
-                            )
-                        })?
-                        .parse::<VertexIDType>()
-                        .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
-
-                    let to = parsed_line
-                        .next()
-                        .ok_or_else(|| {
-                            GraphError::InvalidFormat(
-                                "Missing 'to' vertex id in edge definition".to_string(),
-                            )
-                        })?
-                        .parse::<VertexIDType>()
-                        .map_err(|e| GraphError::ParseError(ParsingError::Int(e)))?;
-
-                    // Check if vertex IDs are within valid range
-                    if let Some(n) = n_vertices {
-                        if from >= n || to >= n {
-                            return Err(GraphError::InvalidFormat(format!(
-                                "Vertex ID out of range: expected 0-{}, got {} or {}",
-                                n - 1,
-                                from,
-                                to
-                            )));
-                        }
-
-                        // We create a vertex each for the number of vertices in line 1 (starting at 0)
-                        vertices = (0..n).map(|vid| Vertex { id: vid }).collect();
-                    }
-
-                    let edge = edge_builder(parsed_line.collect::<Vec<&str>>());
-
-                    edges.push((from, to, edge));
-                }
+            // Check if vertex IDs are within valid range
+            if from >= n_vertices || to >= n_vertices {
+                return Err(GraphError::InvalidFormat(format!(
+                    "Vertex ID out of range: expected 0-{}, got {} or {}",
+                    n_vertices - 1,
+                    from,
+                    to
+                )));
             }
+
+            let edge = edge_builder(parsed_line.collect::<Vec<&str>>());
+
+            edges.push((from, to, edge));
         }
 
-        if n_vertices.is_none() {
-            return Err(GraphError::InvalidFormat("Empty file".to_string()));
-        }
+        // We create a vertex each for the number of vertices in line 1 (starting at 0)
+        let vertices = (0..n_vertices).map(|vid| Vertex { id: vid }).collect();
 
         if edges.is_empty() {
             return Err(GraphError::InvalidFormat(
@@ -165,7 +152,7 @@ where
             ));
         }
 
-        Graph::from(n_vertices.unwrap(), vertices, edges, directed)
+        Graph::from(n_vertices, vertices, edges, directed)
     }
 }
 

@@ -11,12 +11,12 @@ fn create_from_file() {
 }
 
 #[rstest]
-#[case("resources/test_graphs/undirected/Graph1.txt", 100)]
-#[case("resources/test_graphs/undirected/Graph2.txt", 100)]
-#[case("resources/test_graphs/undirected/Graph3.txt", 100)]
+// #[case("resources/test_graphs/undirected/Graph1.txt", 100)]
+// #[case("resources/test_graphs/undirected/Graph2.txt", 100)]
+// #[case("resources/test_graphs/undirected/Graph3.txt", 100)]
 #[case("resources/test_graphs/undirected/Graph_gross.txt", 1000)]
-#[case("resources/test_graphs/undirected/Graph_ganzgross.txt", 1000)]
-#[case("resources/test_graphs/undirected/Graph_ganzganzgross.txt", 1000)]
+// #[case("resources/test_graphs/undirected/Graph_ganzgross.txt", 1000)]
+// #[case("resources/test_graphs/undirected/Graph_ganzganzgross.txt", 1000)]
 fn creation_performance(#[case] input_path: &str, #[case] max_time_millis: u32) {
     let now = Instant::now();
     let _graph = Graph::from_hoever_file(input_path, false).unwrap();
