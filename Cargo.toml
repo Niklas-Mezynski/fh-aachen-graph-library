@@ -9,3 +9,11 @@ thiserror = "2.0.12"
 
 [dev-dependencies]
 rstest = "0.25.0"
+criterion = "0.5"
+
+[[bench]]
+name = "graph_benchmarks"
+harness = false
+
+[[test]]
+name = "integration_tests"
