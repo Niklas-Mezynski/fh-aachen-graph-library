@@ -1,8 +1,8 @@
 use criterion::{BenchmarkId, Criterion};
 use graph_library::Graph;
 
-pub fn graph_creation(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Graph Creation");
+pub fn count_connected_subgraphs(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Count Connected Subgraphs");
 
     let files = [
         "resources/test_graphs/undirected/Graph1.txt",
@@ -14,8 +14,9 @@ pub fn graph_creation(c: &mut Criterion) {
     ];
 
     for file in files {
-        group.bench_with_input(BenchmarkId::new("from_file", file), &file, |b, &file| {
-            b.iter(|| Graph::from_hoever_file(file, false).unwrap());
+        let graph = Graph::from_hoever_file(file, false).unwrap();
+        group.bench_function(BenchmarkId::new("count_connected", file), |b| {
+            b.iter(|| graph.count_connected_subgraphs().unwrap());
         });
     }
 
