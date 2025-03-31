@@ -30,8 +30,6 @@ where
             count += 1;
         }
 
-        dbg!("Algorithm end!");
-
         Ok(count)
     }
 }
