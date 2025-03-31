@@ -4,8 +4,6 @@ use std::fs::File;
 use std::hash::Hash;
 use std::io::{self, BufRead};
 
-use rustc_hash::FxHashSet;
-
 use crate::graph::adjacency_list::AdjacencyListGraph;
 
 use super::error::GraphError;
@@ -91,8 +89,7 @@ where
         let reader = io::BufReader::new(file);
 
         let mut n_vertices = None;
-        let mut vertices: Vec<Vertex> = vec![];
-        let mut vertex_ids: FxHashSet<VertexIDType> = FxHashSet::default();
+        let mut vertices = vec![];
         let mut edges: Vec<(VertexIDType, VertexIDType, Edge)> = vec![];
 
         for (line_number, line) in reader.lines().enumerate() {
@@ -146,18 +143,12 @@ where
                                 to
                             )));
                         }
+
+                        // We create a vertex each for the number of vertices in line 1 (starting at 0)
+                        vertices = (0..n).map(|vid| Vertex { id: vid }).collect();
                     }
 
                     let edge = edge_builder(parsed_line.collect::<Vec<&str>>());
-
-                    if !vertex_ids.contains(&from) {
-                        vertex_ids.insert(from);
-                        vertices.push(Vertex { id: from });
-                    }
-                    if !vertex_ids.contains(&to) {
-                        vertex_ids.insert(to);
-                        vertices.push(Vertex { id: to });
-                    }
 
                     edges.push((from, to, edge));
                 }
