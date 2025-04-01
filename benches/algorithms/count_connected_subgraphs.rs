@@ -1,9 +1,7 @@
 use criterion::{BenchmarkId, Criterion};
-use graph_library::Graph;
+use graph_library::{algorithms::iter::TraversalType, Graph};
 
 pub fn count_connected_subgraphs(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Count Connected Subgraphs");
-
     let files = [
         "resources/test_graphs/undirected/Graph1.txt",
         "resources/test_graphs/undirected/Graph2.txt",
@@ -13,12 +11,29 @@ pub fn count_connected_subgraphs(c: &mut Criterion) {
         "resources/test_graphs/undirected/Graph_ganzganzgross.txt",
     ];
 
-    for file in files {
-        let graph = Graph::from_hoever_file(file, false).unwrap();
-        group.bench_function(BenchmarkId::new("count_connected", file), |b| {
-            b.iter(|| graph.count_connected_subgraphs().unwrap());
-        });
-    }
+    let traversals = [
+        TraversalType::BFS,
+        TraversalType::DFS,
+        TraversalType::DFSRecursive,
+    ];
 
-    group.finish();
+    for traversal_type in traversals {
+        let mut group =
+            c.benchmark_group(format!("Count Connected Subgraphs ({})", traversal_type));
+
+        for file in files {
+            let graph = Graph::from_hoever_file(file, false).unwrap();
+            group.bench_function(
+                BenchmarkId::new(format!("count_connected_{:?}", traversal_type), file),
+                |b| {
+                    b.iter(|| {
+                        graph
+                            .count_connected_subgraphs(Some(traversal_type))
+                            .unwrap()
+                    });
+                },
+            );
+        }
+        group.finish();
+    }
 }

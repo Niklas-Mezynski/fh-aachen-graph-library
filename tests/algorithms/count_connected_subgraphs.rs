@@ -1,4 +1,4 @@
-use graph_library::Graph;
+use graph_library::{algorithms::iter::TraversalType, Graph};
 use rstest::rstest;
 
 #[rstest]
@@ -11,9 +11,10 @@ use rstest::rstest;
 fn count_connected_subgraphs(#[case] input_path: &str, #[case] expected_count: u32) {
     let graph = Graph::from_hoever_file(input_path, false)
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
     // Count connected subgraphs
     let count = graph
-        .count_connected_subgraphs()
+        .count_connected_subgraphs(Some(TraversalType::BFS))
         .unwrap_or_else(|e| panic!("Failed to count connected subgraphs: {:?}", e));
 
     // Verify expected count

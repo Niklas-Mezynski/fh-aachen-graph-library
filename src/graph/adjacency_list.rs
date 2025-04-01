@@ -100,9 +100,9 @@ where
         self.vertices.values().collect()
     }
 
-    fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
-        if !self.vertices.contains_key(&vertex) {
-            return Err(GraphError::VertexNotFound(vertex));
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+        if !self.vertices.contains_key(vertex) {
+            return Err(GraphError::VertexNotFound(vertex.clone()));
         }
 
         Ok(self

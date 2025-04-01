@@ -50,7 +50,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
     ///
     /// # Errors
     /// - `GraphError::VertexNotFound`: when the vertex does not exist
-    fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
     // fn has_vertex(&self, vertex: &Vertex) -> bool;
     // fn has_edge(&self, from: &Vertex, to: &Vertex) -> bool;
 }

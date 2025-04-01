@@ -256,7 +256,7 @@ where
     /// Get all direct neighbors of a vertex
     ///
     /// See [`GraphInterface::get_adjacent_vertices`] for details
-    pub fn get_adjacent_vertices(&self, vertex: VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+    pub fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         self.backend.get_adjacent_vertices(vertex)
     }
 }

@@ -51,7 +51,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
             // Add unvisited neighbors to queue
-            let neighbors = self.graph.get_adjacent_vertices(next_id).expect(
+            let neighbors = self.graph.get_adjacent_vertices(&next_id).expect(
                 "get_adjacent_vertices should not error as the vertices in the queue must exist",
             );
             for v in neighbors {
