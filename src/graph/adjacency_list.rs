@@ -1,6 +1,6 @@
 use std::{fmt::Debug, hash::Hash};
 
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 
 use super::{
     error::GraphError,
@@ -30,6 +30,23 @@ where
     Vertex: Debug,
     Edge: Debug + Clone,
 {
+    fn new_with_size(vertex_count: Option<usize>, _edge_count: Option<usize>) -> Self
+    where
+        Self: Sized,
+    {
+        AdjacencyListGraph {
+            vertices: match vertex_count {
+                Some(n_vertices) => FxHashMap::with_capacity_and_hasher(n_vertices, FxBuildHasher),
+                None => FxHashMap::default(),
+            },
+            adjacency: match vertex_count {
+                // TODO: Should I really allocate one an adjacency list for each vertex?
+                Some(n_vertices) => FxHashMap::with_capacity_and_hasher(n_vertices, FxBuildHasher),
+                None => FxHashMap::default(),
+            },
+        }
+    }
+
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
         let vid = vertex.get_id();
         if self.vertices.contains_key(&vid) {

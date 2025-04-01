@@ -51,16 +51,35 @@ where
         }
     }
 
+    /// Create a new Graph and tries to preallocate data structures based on the number of vertices/edges
+    fn new_with_size(
+        backend_type: GraphBackend,
+        vertex_count: Option<usize>,
+        edge_count: Option<usize>,
+    ) -> Self {
+        Graph {
+            backend: Box::new(match backend_type {
+                GraphBackend::AdjacencyList => {
+                    AdjacencyListGraph::new_with_size(vertex_count, edge_count)
+                }
+            }),
+        }
+    }
+
     /// Creates a new graph, from given vertices and edges
     ///
     /// Here I can also make decisions about which graph backend to use
     pub fn from(
-        _n_vertices: VertexIDType, // Could be used for pre-allocating memory or hashmap capacity
+        n_vertices: VertexIDType, // Could be used for pre-allocating memory or hashmap capacity
         vertices: Vec<Vertex>,
         edges: Vec<(VId, VId, Edge)>,
         directed: bool,
     ) -> Result<Self, GraphError<VId>> {
-        let mut graph = Graph::<VId, Vertex, Edge>::new(GraphBackend::AdjacencyList);
+        let mut graph = Graph::<VId, Vertex, Edge>::new_with_size(
+            GraphBackend::AdjacencyList,
+            Some(n_vertices as usize),
+            Some(edges.len()),
+        );
 
         vertices
             .into_iter()
