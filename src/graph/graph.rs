@@ -16,17 +16,21 @@ pub struct Vertex {
     pub id: VertexIDType,
 }
 
-impl WithID<Vertex, VertexIDType> for Vertex {
+impl WithID<VertexIDType> for Vertex {
     fn get_id(&self) -> VertexIDType {
         self.id
     }
+}
+
+pub enum GraphBackend {
+    AdjacencyList,
 }
 
 #[derive(Debug)]
 pub struct Graph<VId = VertexIDType, VertexT = Vertex, Edge = ()>
 where
     VId: Eq + Hash + Copy + 'static,
-    VertexT: WithID<VertexT, VId> + 'static,
+    VertexT: WithID<VId> + 'static,
     Edge: 'static,
 {
     backend: Box<dyn GraphInterface<VId, VertexT, Edge>>,
@@ -35,9 +39,18 @@ where
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug,
-    Vertex: WithID<Vertex, VId> + Debug,
+    Vertex: WithID<VId> + Debug,
     Edge: Clone + Debug,
 {
+    /// Creates a new empty graph
+    pub fn new(backend_type: GraphBackend) -> Self {
+        Graph {
+            backend: Box::new(match backend_type {
+                GraphBackend::AdjacencyList => AdjacencyListGraph::new(),
+            }),
+        }
+    }
+
     /// Creates a new graph, from given vertices and edges
     ///
     /// Here I can also make decisions about which graph backend to use
@@ -47,9 +60,7 @@ where
         edges: Vec<(VId, VId, Edge)>,
         directed: bool,
     ) -> Result<Self, GraphError<VId>> {
-        let mut graph = Graph::<VId, Vertex, Edge> {
-            backend: Box::new(AdjacencyListGraph::new()),
-        };
+        let mut graph = Graph::<VId, Vertex, Edge>::new(GraphBackend::AdjacencyList);
 
         vertices
             .into_iter()
@@ -63,6 +74,17 @@ where
             })?;
 
         Ok(graph)
+    }
+}
+
+impl<VId, Vertex, Edge> Default for Graph<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<VId> + Debug,
+    Edge: Clone + Debug,
+{
+    fn default() -> Self {
+        Self::new(GraphBackend::AdjacencyList)
     }
 }
 
@@ -169,7 +191,7 @@ impl Graph<VertexIDType, Vertex, ()> {
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy,
-    Vertex: WithID<Vertex, VId>,
+    Vertex: WithID<VId>,
     Edge: Clone,
 {
     /// Adds a new vertex to the graph

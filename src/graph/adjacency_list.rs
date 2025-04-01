@@ -8,12 +8,12 @@ use super::{
 };
 
 #[derive(Debug)]
-pub struct AdjacencyListGraph<VId, Vertex: WithID<Vertex, VId>, Edge> {
+pub struct AdjacencyListGraph<VId, Vertex: WithID<VId>, Edge> {
     vertices: FxHashMap<VId, Vertex>,
     adjacency: FxHashMap<VId, Vec<(VId, Edge)>>,
 }
 
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> AdjacencyListGraph<VId, Vertex, Edge> {
+impl<VId, Vertex: WithID<VId>, Edge> AdjacencyListGraph<VId, Vertex, Edge> {
     /// Create a new, empty Graph with an Adjacency List representation
     pub fn new() -> Self {
         AdjacencyListGraph {
@@ -23,7 +23,7 @@ impl<VId, Vertex: WithID<Vertex, VId>, Edge> AdjacencyListGraph<VId, Vertex, Edg
     }
 }
 
-impl<VId, Vertex: WithID<Vertex, VId>, Edge> GraphInterface<VId, Vertex, Edge>
+impl<VId, Vertex: WithID<VId>, Edge> GraphInterface<VId, Vertex, Edge>
     for AdjacencyListGraph<VId, Vertex, Edge>
 where
     VId: Debug + Eq + Hash + Copy,

@@ -2,11 +2,11 @@ use std::fmt::Debug;
 
 use super::error::GraphError;
 
-pub trait WithID<BaseType, IDType> {
+pub trait WithID<IDType> {
     fn get_id(&self) -> IDType;
 }
 
-pub trait GraphInterface<VId, Vertex: WithID<Vertex, VId>, Edge>: Debug {
+pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
     // Basic Graph operations
     /// Adds a new vertex to the graph
     ///

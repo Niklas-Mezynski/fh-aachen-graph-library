@@ -7,7 +7,7 @@ use crate::{graph::WithID, Graph, GraphError};
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug,
-    Vertex: WithID<Vertex, VId>,
+    Vertex: WithID<VId>,
     Edge: Clone,
 {
     pub fn count_connected_subgraphs(&self) -> Result<u32, GraphError<VId>> {

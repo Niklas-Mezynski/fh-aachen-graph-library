@@ -7,7 +7,7 @@ use crate::{graph::WithID, Graph, GraphError};
 pub struct BfsIterator<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + 'static,
-    Vertex: WithID<Vertex, VId> + 'static,
+    Vertex: WithID<VId> + 'static,
     Edge: 'static,
 {
     graph: &'a Graph<VId, Vertex, Edge>,
@@ -18,7 +18,7 @@ where
 impl<'a, VId, Vertex, Edge> BfsIterator<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug,
-    Vertex: WithID<Vertex, VId>,
+    Vertex: WithID<VId>,
     Edge: Clone,
 {
     fn new(
@@ -43,7 +43,7 @@ where
 impl<'a, VId, Vertex, Edge> Iterator for BfsIterator<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug + 'static,
-    Vertex: WithID<Vertex, VId> + 'static,
+    Vertex: WithID<VId> + 'static,
     Edge: Clone + 'static,
 {
     type Item = &'a Vertex;
@@ -75,7 +75,7 @@ where
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug,
-    Vertex: WithID<Vertex, VId>,
+    Vertex: WithID<VId>,
     Edge: Clone,
 {
     pub fn bfs_iter(
