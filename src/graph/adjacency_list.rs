@@ -40,7 +40,8 @@ where
                 None => FxHashMap::default(),
             },
             adjacency: match vertex_count {
-                // TODO: Should I really allocate one an adjacency list for each vertex?
+                // Should I really allocate one an adjacency list for each vertex?
+                // -> Depends on how many lonely vertices I have. Usually there should be no lonely vertices in most cases so I won't optimize for that
                 Some(n_vertices) => FxHashMap::with_capacity_and_hasher(n_vertices, FxBuildHasher),
                 None => FxHashMap::default(),
             },
