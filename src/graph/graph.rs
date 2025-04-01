@@ -183,7 +183,7 @@ where
             .collect::<Result<Vec<_>, GraphError<VertexIDType>>>()?;
 
         // We create a vertex each for the number of vertices in line 1 (starting at 0)
-        let vertices = (0..n_vertices).map(|vid| Vertex { id: vid }).collect();
+        let vertices: Vec<Vertex> = (0..n_vertices).map(|vid| Vertex { id: vid }).collect();
 
         if edges.is_empty() {
             return Err(GraphError::InvalidFormat(

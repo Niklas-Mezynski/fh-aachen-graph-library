@@ -16,14 +16,22 @@ where
 
         let mut count: u32 = 0;
 
-        while let Some(current_root) = vertices.pop_front() {
+        'outer: while let Some(current_root) = vertices.pop_front() {
             let current_root_vid = current_root.get_id();
             if visited.contains(&current_root_vid) {
                 continue;
             }
             for vertex in self.bfs_iter(current_root_vid)? {
+                let vid = vertex.get_id();
+
+                // If this vertex has been visited already, we are traversing a subgraph that was already counted -> abort
+                // (This may happen in directed graphs, if we start at a vertex that is not reachable by traversal)
+                if visited.contains(&vid) {
+                    continue 'outer;
+                }
+
                 // Remember that this vertex was already visited
-                visited.insert(vertex.get_id());
+                visited.insert(vid);
             }
 
             // We traversed one whole graph, add one to the final count
