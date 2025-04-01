@@ -11,11 +11,7 @@ pub fn count_connected_subgraphs(c: &mut Criterion) {
         "resources/test_graphs/undirected/Graph_ganzganzgross.txt",
     ];
 
-    let traversals = [
-        TraversalType::BFS,
-        TraversalType::DFS,
-        TraversalType::DFSRecursive,
-    ];
+    let traversals = [TraversalType::BFS, TraversalType::DFS];
 
     for traversal_type in traversals {
         let mut group =

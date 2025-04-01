@@ -8,19 +8,25 @@ use rstest::rstest;
 #[case("resources/test_graphs/undirected/Graph_gross.txt", 222)]
 #[case("resources/test_graphs/undirected/Graph_ganzgross.txt", 9560)]
 #[case("resources/test_graphs/undirected/Graph_ganzganzgross.txt", 306)]
-fn count_connected_subgraphs(#[case] input_path: &str, #[case] expected_count: u32) {
+fn count_connected_subgraphs(
+    #[case] input_path: &str,
+    #[case] expected_count: u32,
+    #[values(TraversalType::BFS, TraversalType::DFS)]
+    // Add other traversal types as needed
+    traversal_type: TraversalType,
+) {
     let graph = Graph::from_hoever_file(input_path, false)
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     // Count connected subgraphs
     let count = graph
-        .count_connected_subgraphs(Some(TraversalType::BFS))
+        .count_connected_subgraphs(Some(traversal_type))
         .unwrap_or_else(|e| panic!("Failed to count connected subgraphs: {:?}", e));
 
     // Verify expected count
     assert_eq!(
         count, expected_count,
-        "For graph {}, expected {} connected subgraphs, but got {}",
-        input_path, expected_count, count
+        "For graph {} using {:?}, expected {} connected subgraphs, but got {}",
+        input_path, traversal_type, expected_count, count
     );
 }

@@ -1,13 +1,10 @@
-use std::{fmt::Debug, hash::Hash};
-
 use crate::{
     algorithms::{bfs_iter::BfsIterator, dfs_iter::DfsIterator},
     graph::WithID,
     Graph, GraphError,
 };
-
-use super::dfs_iter::DfsRecursiveIterator;
 use std::fmt::Display;
+use std::{fmt::Debug, hash::Hash};
 
 /// Specifies which graph traversal algorithm to use
 #[derive(Debug, Clone, Copy, Default)]
@@ -17,8 +14,6 @@ pub enum TraversalType {
     BFS,
     /// Depth-first search traversal
     DFS,
-    /// Depth-first search traversal, but with recursion. !WARNING! The graph is traversed on iter creation
-    DFSRecursive,
 }
 
 impl Display for TraversalType {
@@ -26,7 +21,6 @@ impl Display for TraversalType {
         match self {
             TraversalType::BFS => write!(f, "BFS"),
             TraversalType::DFS => write!(f, "DFS"),
-            TraversalType::DFSRecursive => write!(f, "DFS (Recursive)"),
         }
     }
 }
@@ -40,7 +34,6 @@ where
 {
     BFS(BfsIterator<'a, VId, Vertex, Edge>),
     DFS(DfsIterator<'a, VId, Vertex, Edge>),
-    DFSRecursive(DfsRecursiveIterator<'a, VId, Vertex, Edge>),
 }
 
 impl<'a, VId, Vertex, Edge> Iterator for GraphIterator<'a, VId, Vertex, Edge>
@@ -55,7 +48,6 @@ where
         match self {
             Self::BFS(iter) => iter.next(),
             Self::DFS(iter) => iter.next(),
-            Self::DFSRecursive(iter) => iter.next(),
         }
     }
 }
@@ -76,9 +68,6 @@ where
         match iter_type {
             TraversalType::BFS => Ok(GraphIterator::BFS(self.bfs_iter(start_vertex)?)),
             TraversalType::DFS => Ok(GraphIterator::DFS(self.dfs_iter(start_vertex)?)),
-            TraversalType::DFSRecursive => Ok(GraphIterator::DFSRecursive(
-                self.dfs_recursive_iter(start_vertex)?,
-            )),
         }
     }
 }
