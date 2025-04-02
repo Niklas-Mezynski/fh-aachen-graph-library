@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fmt::Debug, hash::Hash, vec};
+use std::{fmt::Debug, hash::Hash, vec};
 
 use rustc_hash::FxHashSet;
 

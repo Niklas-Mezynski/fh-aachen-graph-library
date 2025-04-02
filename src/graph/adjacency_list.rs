@@ -102,12 +102,12 @@ where
 
     fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         if !self.vertices.contains_key(vertex) {
-            return Err(GraphError::VertexNotFound(vertex.clone()));
+            return Err(GraphError::VertexNotFound(*vertex));
         }
 
         Ok(self
             .adjacency
-            .get(&vertex)
+            .get(vertex)
             .map(|edges| {
                 edges
                     .iter()
