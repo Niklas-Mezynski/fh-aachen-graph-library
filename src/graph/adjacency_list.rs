@@ -177,7 +177,10 @@ mod tests {
 
         assert!(graph.push_vertex(vertex1).is_ok());
         assert!(graph.push_vertex(vertex2).is_ok());
-        assert!(graph.push_vertex(MockVertex { id: 1 }).is_err()); // Duplicate
+        assert!(matches!(
+            graph.push_vertex(MockVertex { id: 1 }),
+            Err(GraphError::DuplicateVertex(1))
+        )); // Duplicate
     }
 
     #[test]
@@ -191,10 +194,20 @@ mod tests {
         graph.push_vertex(vertex2).unwrap();
 
         assert!(graph.push_edge(1, 2, 10).is_ok());
-        assert!(graph.push_edge(1, 2, 20).is_err()); // Duplicate edge
         assert!(graph.push_edge(2, 1, 30).is_ok());
-        assert!(graph.push_edge(3, 1, 40).is_err()); // Non existent vertex
-        assert!(graph.push_edge(1, 3, 40).is_err()); // Non existent vertex
+
+        assert!(matches!(
+            graph.push_edge(1, 2, 20),
+            Err(GraphError::DuplicateEdge(1, 2))
+        )); // Duplicate edge
+        assert!(matches!(
+            graph.push_edge(3, 1, 40),
+            Err(GraphError::VertexNotFound(3))
+        )); // Non existent vertex
+        assert!(matches!(
+            graph.push_edge(1, 3, 40),
+            Err(GraphError::VertexNotFound(3))
+        )); // Non existent vertex
     }
 
     #[test]
@@ -207,7 +220,10 @@ mod tests {
         graph.push_vertex(vertex2).unwrap();
 
         assert!(graph.push_undirected_edge(1, 2, 10).is_ok());
-        assert!(graph.push_undirected_edge(1, 2, 20).is_err()); // Duplicate edge
+        assert!(matches!(
+            graph.push_undirected_edge(1, 2, 20),
+            Err(GraphError::DuplicateEdge(1, 2))
+        )); // Duplicate edge
 
         let adj_1 = graph.adjacency.get(&1).unwrap();
         assert_eq!(adj_1.len(), 1);
@@ -312,6 +328,9 @@ mod tests {
         let adjacent_vertices = graph.get_adjacent_vertices(&2).unwrap();
         assert_eq!(adjacent_vertices.len(), 0);
 
-        assert!(graph.get_adjacent_vertices(&4).is_err());
+        assert!(matches!(
+            graph.get_adjacent_vertices(&4),
+            Err(GraphError::VertexNotFound(4))
+        ));
     }
 }

@@ -37,8 +37,10 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     ) -> Result<(), GraphError<VId>>;
 
     // Graph queries
+    /// Get vertex data by vertex id
     fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>>;
 
+    /// Get a mutable reference to vertex data by vertex id
     fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>>;
 
     /// Get all vertices in the graph
@@ -48,6 +50,4 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// # Errors
     /// - `GraphError::VertexNotFound`: when the vertex does not exist
     fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
-    // fn has_vertex(&self, vertex: &Vertex) -> bool;
-    // fn has_edge(&self, from: &Vertex, to: &Vertex) -> bool;
 }
