@@ -48,8 +48,15 @@ where
     Vertex: WithID<VId>,
     Edge: Clone,
 {
-    /// Creates a new empty graph
-    pub fn new(backend_type: GraphBackend, is_directed: bool) -> Self {
+    /// Creates a new empty graph with a default backend
+    pub fn new(is_directed: bool) -> Self {
+        Graph {
+            backend: Backend::AdjacencyList(AdjacencyListGraph::new(is_directed)),
+        }
+    }
+
+    /// Creates a new empty graph with a given Backend
+    pub fn new_with_backend(backend_type: GraphBackend, is_directed: bool) -> Self {
         Graph {
             backend: match backend_type {
                 GraphBackend::AdjacencyList => {
