@@ -12,7 +12,11 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
     /// # Arguments
     /// * `vertex_count`: The expected number of vertices in the graph. This is used to pre-allocate memory for the vertices.
     /// * `edge_count`: The expected number of edges in the graph. This is used to pre-allocate memory for the edges.
-    fn new_with_size(vertex_count: Option<usize>, edge_count: Option<usize>) -> Self
+    fn new_with_size(
+        vertex_count: Option<usize>,
+        edge_count: Option<usize>,
+        is_directed: bool,
+    ) -> Self
     where
         Self: Sized;
 
@@ -30,6 +34,9 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
     /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
     fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>>;
 
+    /// Returns wether the graph is a directed (true) or undirected (false) graph
+    fn is_directed(&self) -> bool;
+
     /// Adds an undirected edge (edges in both directions) between two vertices
     ///
     /// # Errors
@@ -44,6 +51,9 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
 
     // Graph queries
     fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>>;
+
+    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>>;
+
     /// Get all vertices in the graph
     fn get_all_vertices(&self) -> Vec<&Vertex>;
     /// Get All direct neighbors

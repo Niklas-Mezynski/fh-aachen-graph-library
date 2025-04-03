@@ -43,10 +43,10 @@ where
     Edge: Clone + Debug,
 {
     /// Creates a new empty graph
-    pub fn new(backend_type: GraphBackend) -> Self {
+    pub fn new(backend_type: GraphBackend, is_directed: bool) -> Self {
         Graph {
             backend: Box::new(match backend_type {
-                GraphBackend::AdjacencyList => AdjacencyListGraph::new(),
+                GraphBackend::AdjacencyList => AdjacencyListGraph::new(is_directed),
             }),
         }
     }
@@ -56,11 +56,12 @@ where
         backend_type: GraphBackend,
         vertex_count: Option<usize>,
         edge_count: Option<usize>,
+        is_directed: bool,
     ) -> Self {
         Graph {
             backend: Box::new(match backend_type {
                 GraphBackend::AdjacencyList => {
-                    AdjacencyListGraph::new_with_size(vertex_count, edge_count)
+                    AdjacencyListGraph::new_with_size(vertex_count, edge_count, is_directed)
                 }
             }),
         }
@@ -79,6 +80,7 @@ where
             GraphBackend::AdjacencyList,
             Some(n_vertices as usize),
             Some(edges.len()),
+            directed,
         );
 
         vertices
@@ -93,17 +95,6 @@ where
             })?;
 
         Ok(graph)
-    }
-}
-
-impl<VId, Vertex, Edge> Default for Graph<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + Copy + Debug,
-    Vertex: WithID<VId> + Debug,
-    Edge: Clone + Debug,
-{
-    fn default() -> Self {
-        Self::new(GraphBackend::AdjacencyList)
     }
 }
 
@@ -244,6 +235,13 @@ where
     /// See [`GraphInterface::get_vertex_by_id`] for details
     pub fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
         self.backend.get_vertex_by_id(vertex_id)
+    }
+
+    pub fn get_vertex_by_id_mut(
+        &mut self,
+        vertex_id: &VId,
+    ) -> Result<&mut Vertex, GraphError<VId>> {
+        self.backend.get_vertex_by_id_mut(vertex_id)
     }
 
     /// Get all vertices in the graph

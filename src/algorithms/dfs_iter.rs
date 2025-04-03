@@ -4,7 +4,7 @@ use rustc_hash::FxHashSet;
 
 use crate::{graph::WithID, Graph, GraphError};
 
-pub struct DfsIterator<'a, VId, Vertex, Edge>
+pub struct DfsIter<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + 'static,
     Vertex: WithID<VId> + 'static,
@@ -15,7 +15,7 @@ where
     visited: FxHashSet<VId>,
 }
 
-impl<'a, VId, Vertex, Edge> DfsIterator<'a, VId, Vertex, Edge>
+impl<'a, VId, Vertex, Edge> DfsIter<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug,
     Vertex: WithID<VId>,
@@ -32,7 +32,7 @@ where
         let mut visited = FxHashSet::default();
         visited.insert(start_vertex);
 
-        Ok(DfsIterator {
+        Ok(DfsIter {
             graph,
             stack,
             visited,
@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<'a, VId, Vertex, Edge> Iterator for DfsIterator<'a, VId, Vertex, Edge>
+impl<'a, VId, Vertex, Edge> Iterator for DfsIter<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug + 'static,
     Vertex: WithID<VId> + 'static,
@@ -86,7 +86,7 @@ where
     pub fn dfs_iter(
         &self,
         start_vertex: VId,
-    ) -> Result<DfsIterator<VId, Vertex, Edge>, GraphError<VId>> {
-        DfsIterator::new(self, start_vertex)
+    ) -> Result<DfsIter<VId, Vertex, Edge>, GraphError<VId>> {
+        DfsIter::new(self, start_vertex)
     }
 }

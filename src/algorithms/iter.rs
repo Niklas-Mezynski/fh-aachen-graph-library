@@ -1,10 +1,12 @@
 use crate::{
-    algorithms::{bfs_iter::BfsIterator, dfs_iter::DfsIterator},
+    algorithms::{bfs_iter::BfsIter, dfs_iter::DfsIter},
     graph::WithID,
     Graph, GraphError,
 };
 use std::fmt::Display;
 use std::{fmt::Debug, hash::Hash};
+
+use super::bfs_iter::BfsIterMut;
 
 /// Specifies which graph traversal algorithm to use
 #[derive(Debug, Clone, Copy, Default)]
@@ -26,17 +28,17 @@ impl Display for TraversalType {
 }
 
 /// A wrapper enum around different graph iterator implementations
-pub enum GraphIterator<'a, VId, Vertex, Edge>
+pub enum GraphIter<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + 'static,
     Vertex: WithID<VId> + 'static,
     Edge: 'static,
 {
-    BFS(BfsIterator<'a, VId, Vertex, Edge>),
-    DFS(DfsIterator<'a, VId, Vertex, Edge>),
+    BFS(BfsIter<'a, VId, Vertex, Edge>),
+    DFS(DfsIter<'a, VId, Vertex, Edge>),
 }
 
-impl<'a, VId, Vertex, Edge> Iterator for GraphIterator<'a, VId, Vertex, Edge>
+impl<'a, VId, Vertex, Edge> Iterator for GraphIter<'a, VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy + Debug + 'static,
     Vertex: WithID<VId> + 'static,
@@ -64,10 +66,55 @@ where
         &self,
         start_vertex: VId,
         iter_type: TraversalType,
-    ) -> Result<GraphIterator<VId, Vertex, Edge>, GraphError<VId>> {
+    ) -> Result<GraphIter<VId, Vertex, Edge>, GraphError<VId>> {
         match iter_type {
-            TraversalType::BFS => Ok(GraphIterator::BFS(self.bfs_iter(start_vertex)?)),
-            TraversalType::DFS => Ok(GraphIterator::DFS(self.dfs_iter(start_vertex)?)),
+            TraversalType::BFS => Ok(GraphIter::BFS(self.bfs_iter(start_vertex)?)),
+            TraversalType::DFS => Ok(GraphIter::DFS(self.dfs_iter(start_vertex)?)),
+        }
+    }
+}
+
+/// A wrapper enum around different graph iterator implementations
+pub enum GraphIterMut<'a, VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy + 'static,
+    Vertex: WithID<VId> + 'static,
+    Edge: 'static,
+{
+    BFS(BfsIterMut<'a, VId, Vertex, Edge>),
+}
+
+impl<'a, VId, Vertex, Edge> Iterator for GraphIterMut<'a, VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy + Debug + 'static,
+    Vertex: WithID<VId> + 'static,
+    Edge: Clone + 'static,
+{
+    type Item = &'a mut Vertex;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::BFS(iter) => iter.next(),
+        }
+    }
+}
+
+impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<VId>,
+    Edge: Clone,
+{
+    /// Creates an iterator that traverses the graph starting from the given vertex
+    /// using the specified traversal algorithm.
+    pub fn iter_mut(
+        &mut self,
+        start_vertex: VId,
+        iter_type: TraversalType,
+    ) -> Result<GraphIterMut<VId, Vertex, Edge>, GraphError<VId>> {
+        match iter_type {
+            TraversalType::BFS => Ok(GraphIterMut::BFS(self.bfs_iter_mut(start_vertex)?)),
+            TraversalType::DFS => todo!(),
         }
     }
 }
