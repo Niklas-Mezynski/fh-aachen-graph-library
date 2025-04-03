@@ -17,6 +17,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// # Errors
     /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
     /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
+    /// - `GraphError::DirectedOperationOnUndirectedGraph`: when using on an undirected graph
     fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>>;
 
     /// Returns wether the graph is a directed (true) or undirected (false) graph
@@ -27,6 +28,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// # Errors
     /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
     /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
+    /// - `GraphError::UndirectedOperationOnDirectedGraph`: when using on an directed graph
     fn push_undirected_edge(
         &mut self,
         from: VId,

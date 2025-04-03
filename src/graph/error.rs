@@ -22,6 +22,12 @@ pub enum GraphError<VId> {
 
     #[error("Graph operation failed: {0}")]
     OperationFailed(String),
+
+    #[error("Cannot apply directed operation on undirected graph")]
+    DirectedOperationOnUndirectedGraph,
+
+    #[error("Cannot apply undirected operation on directed graph")]
+    UndirectedOperationOnDirectedGraph,
 }
 
 #[derive(Error, Debug)]
