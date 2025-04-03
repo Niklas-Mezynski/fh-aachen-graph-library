@@ -30,9 +30,9 @@ impl Display for TraversalType {
 /// A wrapper enum around different graph iterator implementations
 pub enum GraphIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + 'static,
-    Vertex: WithID<VId> + 'static,
-    Edge: 'static,
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge:,
 {
     BFS(BfsIter<'a, VId, Vertex, Edge>),
     DFS(DfsIter<'a, VId, Vertex, Edge>),
@@ -40,9 +40,9 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for GraphIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug + 'static,
-    Vertex: WithID<VId> + 'static,
-    Edge: Clone + 'static,
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<VId>,
+    Edge: Clone,
 {
     type Item = &'a Vertex;
 
@@ -77,18 +77,18 @@ where
 /// A wrapper enum around different graph iterator implementations
 pub enum GraphIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + 'static,
-    Vertex: WithID<VId> + 'static,
-    Edge: 'static,
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge:,
 {
     BFS(BfsIterMut<'a, VId, Vertex, Edge>),
 }
 
 impl<'a, VId, Vertex, Edge> Iterator for GraphIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug + 'static,
-    Vertex: WithID<VId> + 'static,
-    Edge: Clone + 'static,
+    VId: Eq + Hash + Copy + Debug,
+    Vertex: WithID<VId>,
+    Edge: Clone,
 {
     type Item = &'a mut Vertex;
 

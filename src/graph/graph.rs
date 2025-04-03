@@ -35,9 +35,9 @@ enum Backend<VId, Vertex: WithID<VId>, Edge> {
 #[derive(Debug)]
 pub struct Graph<VId = VertexIDType, VertexT = Vertex, Edge = ()>
 where
-    VId: Eq + Hash + Copy + 'static,
-    VertexT: WithID<VId> + 'static,
-    Edge: 'static,
+    VId: Eq + Hash + Copy,
+    VertexT: WithID<VId>,
+    Edge:,
 {
     backend: Backend<VId, VertexT, Edge>,
 }
@@ -211,67 +211,6 @@ impl Graph<VertexIDType, Vertex, ()> {
     }
 }
 
-// Implement the graph backend
-impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
-{
-    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.push_vertex(vertex),
-        }
-    }
-
-    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.push_edge(from, to, edge),
-        }
-    }
-
-    fn is_directed(&self) -> bool {
-        match self {
-            Backend::AdjacencyList(graph) => graph.is_directed(),
-        }
-    }
-
-    fn push_undirected_edge(
-        &mut self,
-        from: VId,
-        to: VId,
-        edge: Edge,
-    ) -> Result<(), GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.push_undirected_edge(from, to, edge),
-        }
-    }
-
-    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_vertex_by_id(vertex_id),
-        }
-    }
-
-    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_vertex_by_id_mut(id),
-        }
-    }
-
-    fn get_all_vertices(&self) -> Vec<&Vertex> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_all_vertices(),
-        }
-    }
-
-    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex),
-        }
-    }
-}
-
 // Implement the public facing methods directly on Graph
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
@@ -331,5 +270,66 @@ where
     /// See [`GraphInterface::get_adjacent_vertices`] for details
     pub fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         self.backend.get_adjacent_vertices(vertex)
+    }
+}
+
+// Implement the graph backend
+impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: Clone,
+{
+    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.push_vertex(vertex),
+        }
+    }
+
+    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.push_edge(from, to, edge),
+        }
+    }
+
+    fn is_directed(&self) -> bool {
+        match self {
+            Backend::AdjacencyList(graph) => graph.is_directed(),
+        }
+    }
+
+    fn push_undirected_edge(
+        &mut self,
+        from: VId,
+        to: VId,
+        edge: Edge,
+    ) -> Result<(), GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.push_undirected_edge(from, to, edge),
+        }
+    }
+
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_vertex_by_id(vertex_id),
+        }
+    }
+
+    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_vertex_by_id_mut(id),
+        }
+    }
+
+    fn get_all_vertices(&self) -> Vec<&Vertex> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_all_vertices(),
+        }
+    }
+
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex),
+        }
     }
 }

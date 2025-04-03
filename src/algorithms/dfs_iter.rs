@@ -6,9 +6,9 @@ use crate::{graph::WithID, Graph, GraphError};
 
 pub struct DfsIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + 'static,
-    Vertex: WithID<VId> + 'static,
-    Edge: 'static,
+    VId: Eq + Hash + Copy ,
+    Vertex: WithID<VId> ,
+    Edge: ,
 {
     graph: &'a Graph<VId, Vertex, Edge>,
     stack: Vec<VId>,
@@ -42,9 +42,9 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for DfsIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug + 'static,
-    Vertex: WithID<VId> + 'static,
-    Edge: Clone + 'static,
+    VId: Eq + Hash + Copy + Debug ,
+    Vertex: WithID<VId> ,
+    Edge: Clone ,
 {
     type Item = &'a Vertex;
 
