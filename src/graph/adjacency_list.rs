@@ -23,16 +23,9 @@ impl<VId, Vertex: WithID<VId>, Edge> AdjacencyListGraph<VId, Vertex, Edge> {
             is_directed,
         }
     }
-}
 
-impl<VId, Vertex: WithID<VId>, Edge> GraphInterface<VId, Vertex, Edge>
-    for AdjacencyListGraph<VId, Vertex, Edge>
-where
-    VId: Debug + Eq + Hash + Copy,
-    Vertex: Debug,
-    Edge: Debug + Clone,
-{
-    fn new_with_size(
+    /// Create a new Graph and tries to preallocate data structures based on the number of vertices/edges
+    pub fn new_with_size(
         vertex_count: Option<usize>,
         _edge_count: Option<usize>,
         is_directed: bool,
@@ -54,7 +47,14 @@ where
             is_directed,
         }
     }
+}
 
+impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for AdjacencyListGraph<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: Clone,
+{
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
         let vid = vertex.get_id();
         if self.vertices.contains_key(&vid) {

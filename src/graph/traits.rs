@@ -1,25 +1,10 @@
-use std::fmt::Debug;
-
 use super::error::GraphError;
 
 pub trait WithID<IDType> {
     fn get_id(&self) -> IDType;
 }
 
-pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
-    /// Create a new Graph and tries to preallocate data structures based on the number of vertices/edges
-    ///
-    /// # Arguments
-    /// * `vertex_count`: The expected number of vertices in the graph. This is used to pre-allocate memory for the vertices.
-    /// * `edge_count`: The expected number of edges in the graph. This is used to pre-allocate memory for the edges.
-    fn new_with_size(
-        vertex_count: Option<usize>,
-        edge_count: Option<usize>,
-        is_directed: bool,
-    ) -> Self
-    where
-        Self: Sized;
-
+pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     // Basic Graph operations
     /// Adds a new vertex to the graph
     ///

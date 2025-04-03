@@ -6,7 +6,7 @@ use crate::{algorithms::iter::TraversalType, graph::WithID, Graph, GraphError};
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + Debug + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {

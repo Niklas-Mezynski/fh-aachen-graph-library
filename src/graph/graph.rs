@@ -22,8 +22,14 @@ impl WithID<VertexIDType> for Vertex {
     }
 }
 
+#[derive(Debug)]
 pub enum GraphBackend {
     AdjacencyList,
+}
+
+#[derive(Debug)]
+enum Backend<VId, Vertex: WithID<VId>, Edge> {
+    AdjacencyList(AdjacencyListGraph<VId, Vertex, Edge>),
 }
 
 #[derive(Debug)]
@@ -33,25 +39,33 @@ where
     VertexT: WithID<VId> + 'static,
     Edge: 'static,
 {
-    backend: Box<dyn GraphInterface<VId, VertexT, Edge>>,
+    backend: Backend<VId, VertexT, Edge>,
 }
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
-    Vertex: WithID<VId> + Debug,
-    Edge: Clone + Debug,
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: Clone,
 {
     /// Creates a new empty graph
     pub fn new(backend_type: GraphBackend, is_directed: bool) -> Self {
         Graph {
-            backend: Box::new(match backend_type {
-                GraphBackend::AdjacencyList => AdjacencyListGraph::new(is_directed),
-            }),
+            backend: match backend_type {
+                GraphBackend::AdjacencyList => {
+                    Backend::AdjacencyList(AdjacencyListGraph::new(is_directed))
+                }
+            },
         }
     }
 
     /// Create a new Graph and tries to preallocate data structures based on the number of vertices/edges
+    ///
+    /// # Arguments
+    /// * `backend_type`: Which data representation backend to use
+    /// * `vertex_count`: The expected number of vertices in the graph. This is used to pre-allocate memory for the vertices.
+    /// * `edge_count`: The expected number of edges in the graph. This is used to pre-allocate memory for the edges.
+    /// * `is_directed`: Boolean in indicating wether the graph is directed or not
     fn new_with_size(
         backend_type: GraphBackend,
         vertex_count: Option<usize>,
@@ -59,11 +73,11 @@ where
         is_directed: bool,
     ) -> Self {
         Graph {
-            backend: Box::new(match backend_type {
-                GraphBackend::AdjacencyList => {
-                    AdjacencyListGraph::new_with_size(vertex_count, edge_count, is_directed)
-                }
-            }),
+            backend: match backend_type {
+                GraphBackend::AdjacencyList => Backend::AdjacencyList(
+                    AdjacencyListGraph::new_with_size(vertex_count, edge_count, is_directed),
+                ),
+            },
         }
     }
 
@@ -100,7 +114,7 @@ where
 
 impl<Edge> Graph<VertexIDType, Vertex, Edge>
 where
-    Edge: Clone + Debug,
+    Edge: Clone,
 {
     /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
     ///
@@ -194,6 +208,67 @@ impl Graph<VertexIDType, Vertex, ()> {
     /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
     pub fn from_hoever_file(path: &str, directed: bool) -> Result<Self, GraphError<VertexIDType>> {
         Graph::from_hoever_file_with_weights(path, directed, |_| ())
+    }
+}
+
+// Implement the graph backend
+impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: Clone,
+{
+    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.push_vertex(vertex),
+        }
+    }
+
+    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.push_edge(from, to, edge),
+        }
+    }
+
+    fn is_directed(&self) -> bool {
+        match self {
+            Backend::AdjacencyList(graph) => graph.is_directed(),
+        }
+    }
+
+    fn push_undirected_edge(
+        &mut self,
+        from: VId,
+        to: VId,
+        edge: Edge,
+    ) -> Result<(), GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.push_undirected_edge(from, to, edge),
+        }
+    }
+
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_vertex_by_id(vertex_id),
+        }
+    }
+
+    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_vertex_by_id_mut(id),
+        }
+    }
+
+    fn get_all_vertices(&self) -> Vec<&Vertex> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_all_vertices(),
+        }
+    }
+
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex),
+        }
     }
 }
 

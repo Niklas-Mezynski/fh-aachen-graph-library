@@ -17,7 +17,7 @@ where
 
 impl<'a, VId, Vertex, Edge> BfsIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -85,7 +85,7 @@ where
 
 impl<'a, VId, Vertex, Edge> BfsIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -151,7 +151,7 @@ where
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
