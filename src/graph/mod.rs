@@ -3,7 +3,9 @@ mod graph;
 
 mod adjacency_list;
 pub mod error;
-pub mod traits;
+mod graph_structs;
+mod traits;
 
-pub use graph::{Graph, Vertex, VertexIDType};
+pub use graph::Graph;
+pub use graph_structs::{EdgeWeight, Vertex, VertexIDType, WeightedEdge};
 pub use traits::{GraphInterface, WithID};

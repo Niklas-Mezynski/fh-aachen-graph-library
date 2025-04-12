@@ -1,4 +1,4 @@
-use graph_library::Graph;
+use graph_library::{graph::WeightedEdge, Graph};
 use rstest::rstest;
 
 #[rstest]
@@ -28,8 +28,14 @@ fn create_from_file_with_weights_creates_all_vertices(
     #[case] input_path: &str,
     #[case] expected_vertices: usize,
 ) {
-    let graph =
-        Graph::from_hoever_file_with_weights(input_path, false, |remaining| todo!()).unwrap();
+    let graph = Graph::from_hoever_file_with_weights(input_path, false, |remaining| {
+        WeightedEdge::new(
+            remaining[0]
+                .parse()
+                .expect("Graph file value must be a float"),
+        )
+    })
+    .unwrap();
     let vertices = graph.get_all_vertices();
     assert_eq!(vertices.len(), expected_vertices);
 }
