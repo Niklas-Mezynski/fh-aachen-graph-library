@@ -1,5 +1,5 @@
 use graph_library::graph::EdgeWithWeight;
-use graph_library::{algorithms::iter::TraversalType, Graph};
+use graph_library::Graph;
 use rstest::rstest;
 
 #[rstest]
@@ -23,5 +23,11 @@ fn mst_prim(#[case] input_path: &str, #[case] expected_mst_weight: f64) {
         .mst_prim()
         .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
 
-    todo!("Test against the mst weight")
+    let total_weight = mst.get_total_weight();
+
+    assert_eq!(
+        total_weight, expected_mst_weight,
+        "For graph {}, expected MST-weight of {}, but got {}",
+        input_path, expected_mst_weight, total_weight
+    );
 }

@@ -5,6 +5,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap};
 use super::{
     error::GraphError,
     traits::{GraphInterface, WithID},
+    WeightedEdge, WeightedGraphInterface,
 };
 
 #[derive(Debug)]
@@ -178,6 +179,32 @@ where
                     .collect()
             })
             .unwrap_or_default())
+    }
+}
+
+impl<VId, Vertex, Edge> WeightedGraphInterface<VId, Vertex, Edge>
+    for AdjacencyListGraph<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: WeightedEdge + Clone,
+{
+    fn get_total_weight(&self) -> Edge::WeightType {
+        let sum = self
+            .adjacency
+            .values()
+            .map(|adjacency_list| {
+                adjacency_list
+                    .iter()
+                    .map(|(_, edge)| edge.get_weight())
+                    .sum()
+            })
+            .sum();
+
+        match self.is_directed {
+            true => sum,
+            false => sum / Edge::WeightType::from(2),
+        }
     }
 }
 
@@ -359,5 +386,95 @@ mod tests {
             graph.get_adjacent_vertices(&4),
             Err(GraphError::VertexNotFound(4))
         ));
+    }
+
+    #[test]
+    fn test_get_adjacent_vertices_with_edges() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(true);
+        let vertex1 = MockVertex { id: 1 };
+        let vertex2 = MockVertex { id: 2 };
+        let vertex3 = MockVertex { id: 3 };
+
+        graph.push_vertex(vertex1).unwrap();
+        graph.push_vertex(vertex2).unwrap();
+        graph.push_vertex(vertex3).unwrap();
+
+        graph.push_edge(1, 2, 10).unwrap();
+        graph.push_edge(1, 3, 20).unwrap();
+
+        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&1).unwrap();
+        assert_eq!(adjacent_vertices.len(), 2);
+        assert_eq!(adjacent_vertices[0].0.id, 2);
+        assert_eq!(adjacent_vertices[0].1, &10);
+
+        assert_eq!(adjacent_vertices[1].0.id, 3);
+        assert_eq!(adjacent_vertices[1].1, &20);
+
+        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&2).unwrap();
+        assert_eq!(adjacent_vertices.len(), 0);
+
+        assert!(matches!(
+            graph.get_adjacent_vertices_with_edges(&4),
+            Err(GraphError::VertexNotFound(4))
+        ));
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    struct MockWeightedEdge {
+        weight: u32,
+    }
+
+    impl WeightedEdge for MockWeightedEdge {
+        type WeightType = u32;
+
+        fn get_weight(&self) -> Self::WeightType {
+            self.weight
+        }
+    }
+
+    #[test]
+    fn test_get_total_weight_directed() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, MockWeightedEdge> =
+            AdjacencyListGraph::new(true);
+        let vertex1 = MockVertex { id: 1 };
+        let vertex2 = MockVertex { id: 2 };
+        let vertex3 = MockVertex { id: 3 };
+
+        graph.push_vertex(vertex1).unwrap();
+        graph.push_vertex(vertex2).unwrap();
+        graph.push_vertex(vertex3).unwrap();
+
+        graph
+            .push_edge(1, 2, MockWeightedEdge { weight: 10 })
+            .unwrap();
+        graph
+            .push_edge(1, 3, MockWeightedEdge { weight: 20 })
+            .unwrap();
+
+        let total_weight = graph.get_total_weight();
+        assert_eq!(total_weight, 30);
+    }
+
+    #[test]
+    fn test_get_total_weight_undirected() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, MockWeightedEdge> =
+            AdjacencyListGraph::new(false);
+        let vertex1 = MockVertex { id: 1 };
+        let vertex2 = MockVertex { id: 2 };
+        let vertex3 = MockVertex { id: 3 };
+
+        graph.push_vertex(vertex1).unwrap();
+        graph.push_vertex(vertex2).unwrap();
+        graph.push_vertex(vertex3).unwrap();
+
+        graph
+            .push_undirected_edge(1, 2, MockWeightedEdge { weight: 10 })
+            .unwrap();
+        graph
+            .push_undirected_edge(1, 3, MockWeightedEdge { weight: 20 })
+            .unwrap();
+
+        let total_weight = graph.get_total_weight();
+        assert_eq!(total_weight, 30);
     }
 }

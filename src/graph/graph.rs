@@ -8,7 +8,7 @@ use super::error::GraphError;
 use super::error::ParsingError;
 use super::traits::GraphInterface;
 use super::traits::WithID;
-use super::{Vertex, VertexIDType};
+use super::{Vertex, VertexIDType, WeightedEdge, WeightedGraphInterface};
 
 #[derive(Debug)]
 pub enum GraphBackend {
@@ -206,7 +206,7 @@ impl Graph<VertexIDType, Vertex, ()> {
     }
 }
 
-// Implement the public facing methods directly on Graph
+// --- Implement the public facing methods directly on Graph ---
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy,
@@ -342,6 +342,33 @@ where
     ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices_with_edges(vertex),
+        }
+    }
+}
+
+impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: WeightedEdge + Clone,
+{
+    /// Get sum of all edges' weight
+    ///
+    /// See [`WeightedGraphInterface::get_total_weight`] for details
+    pub fn get_total_weight(&self) -> <Edge as WeightedEdge>::WeightType {
+        self.backend.get_total_weight()
+    }
+}
+
+impl<VId, Vertex, Edge> WeightedGraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
+where
+    VId: Eq + Hash + Copy,
+    Vertex: WithID<VId>,
+    Edge: WeightedEdge + Clone,
+{
+    fn get_total_weight(&self) -> <Edge as WeightedEdge>::WeightType {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_total_weight(),
         }
     }
 }

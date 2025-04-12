@@ -1,4 +1,6 @@
-use super::{error::GraphError, EdgeWeight};
+use std::{iter::Sum, ops::Div};
+
+use super::error::GraphError;
 
 pub trait WithID<IDType> {
     fn get_id(&self) -> IDType;
@@ -62,10 +64,10 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>>;
 }
 
-pub trait WeightedEdge<WeightType = EdgeWeight> {
-    type WeightType;
+pub trait WeightedEdge {
+    type WeightType: Sum + Div<Output = Self::WeightType> + From<u8>;
 
-    fn get_weight(&self) -> WeightType;
+    fn get_weight(&self) -> Self::WeightType;
 }
 
 pub trait WeightedGraphInterface<VId, Vertex: WithID<VId>, Edge>
