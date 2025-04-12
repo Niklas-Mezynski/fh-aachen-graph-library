@@ -1,3 +1,4 @@
+use graph_library::graph::EdgeWithWeight;
 use graph_library::{algorithms::iter::TraversalType, Graph};
 use rstest::rstest;
 
@@ -45,10 +46,8 @@ fn count_connected_subgraphs_p02_undirected_weights(
     // Add other traversal types as needed
     traversal_type: TraversalType,
 ) {
-    use graph_library::graph::WeightedEdge;
-
     let graph = Graph::from_hoever_file_with_weights(input_path, false, |remaining| {
-        WeightedEdge::new(
+        EdgeWithWeight::new(
             remaining[0]
                 .parse()
                 .expect("Graph file value must be a float"),

@@ -1,0 +1,27 @@
+use graph_library::graph::EdgeWithWeight;
+use graph_library::{algorithms::iter::TraversalType, Graph};
+use rstest::rstest;
+
+#[rstest]
+#[case("resources/test_graphs/undirected_weighted/G_1_2.txt", 287.32286)]
+#[case("resources/test_graphs/undirected_weighted/G_1_20.txt", 36.86275)]
+#[case("resources/test_graphs/undirected_weighted/G_1_200.txt", 12.68182)]
+#[case("resources/test_graphs/undirected_weighted/G_10_20.txt", 2785.62417)]
+#[case("resources/test_graphs/undirected_weighted/G_10_200.txt", 372.14417)]
+#[case("resources/test_graphs/undirected_weighted/G_100_200.txt", 27550.51488)]
+fn mst_prim(#[case] input_path: &str, #[case] expected_mst_weight: f64) {
+    let graph = Graph::from_hoever_file_with_weights(input_path, false, |remaining| {
+        EdgeWithWeight::new(
+            remaining[0]
+                .parse()
+                .expect("Graph file value must be a float"),
+        )
+    })
+    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
+    let mst = graph
+        .mst_prim()
+        .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
+
+    todo!("Test against the mst weight")
+}

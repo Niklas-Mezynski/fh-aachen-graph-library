@@ -152,6 +152,33 @@ where
             })
             .unwrap_or_default())
     }
+
+    fn get_adjacent_vertices_with_edges(
+        &self,
+        vertex: &VId,
+    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
+        if !self.vertices.contains_key(vertex) {
+            return Err(GraphError::VertexNotFound(*vertex));
+        }
+
+        Ok(self
+            .adjacency
+            .get(vertex)
+            .map(|edges| {
+                edges
+                    .iter()
+                    .map(|(to_id, edge)| {
+                        (
+                            self.vertices
+                                .get(to_id)
+                                .expect("All edges must connect to existing vertices"),
+                            edge,
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use super::WithID;
+use super::{WeightedEdge, WithID};
 
 pub type VertexIDType = u32;
 pub type EdgeWeight = f64;
@@ -15,12 +15,19 @@ impl WithID<VertexIDType> for Vertex {
 }
 
 #[derive(Debug, Clone)]
-pub struct WeightedEdge {
+pub struct EdgeWithWeight {
     pub weight: EdgeWeight,
 }
 
-impl WeightedEdge {
+impl EdgeWithWeight {
     pub fn new(weight: EdgeWeight) -> Self {
-        WeightedEdge { weight }
+        EdgeWithWeight { weight }
+    }
+}
+
+impl WeightedEdge for EdgeWithWeight {
+    type WeightType = EdgeWeight;
+    fn get_weight(&self) -> Self::WeightType {
+        self.weight
     }
 }

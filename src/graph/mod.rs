@@ -7,5 +7,5 @@ mod graph_structs;
 mod traits;
 
 pub use graph::Graph;
-pub use graph_structs::{EdgeWeight, Vertex, VertexIDType, WeightedEdge};
-pub use traits::{GraphInterface, WithID};
+pub use graph_structs::{EdgeWeight, EdgeWithWeight, Vertex, VertexIDType};
+pub use traits::*;

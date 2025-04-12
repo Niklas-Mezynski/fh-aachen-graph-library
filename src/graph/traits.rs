@@ -1,4 +1,4 @@
-use super::error::GraphError;
+use super::{error::GraphError, EdgeWeight};
 
 pub trait WithID<IDType> {
     fn get_id(&self) -> IDType;
@@ -45,9 +45,33 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
 
     /// Get all vertices in the graph
     fn get_all_vertices(&self) -> Vec<&Vertex>;
+
     /// Get All direct neighbors
     ///
     /// # Errors
     /// - `GraphError::VertexNotFound`: when the vertex does not exist
     fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
+
+    /// Get All direct neighbors including the edge data
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
+    fn get_adjacent_vertices_with_edges(
+        &self,
+        vertex: &VId,
+    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>>;
+}
+
+pub trait WeightedEdge<WeightType = EdgeWeight> {
+    type WeightType;
+
+    fn get_weight(&self) -> WeightType;
+}
+
+pub trait WeightedGraphInterface<VId, Vertex: WithID<VId>, Edge>
+where
+    Edge: WeightedEdge,
+{
+    /// Gets the sum of all edges' weights
+    fn get_total_weight(&self) -> Edge::WeightType;
 }

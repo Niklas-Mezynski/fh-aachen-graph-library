@@ -266,6 +266,14 @@ where
     pub fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         self.backend.get_adjacent_vertices(vertex)
     }
+
+    /// Get all direct neighbors of a vertex, with the corresponding edge
+    pub fn get_adjacent_vertices_with_edges(
+        &self,
+        vertex: &VId,
+    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
+        self.backend.get_adjacent_vertices_with_edges(vertex)
+    }
 }
 
 // Implement the graph backend
@@ -325,6 +333,15 @@ where
     fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex),
+        }
+    }
+
+    fn get_adjacent_vertices_with_edges(
+        &self,
+        vertex: &VId,
+    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_adjacent_vertices_with_edges(vertex),
         }
     }
 }
