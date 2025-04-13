@@ -227,6 +227,13 @@ where
         self.backend.push_edge(from, to, edge)
     }
 
+    /// Returns wether the graph is directed or not
+    ///
+    /// See [`GraphInterface::is_directed`] for details
+    pub fn is_directed(&self) -> bool {
+        self.backend.is_directed()
+    }
+
     /// Adds an undirected edge (edges in both directions) between two vertices
     ///
     /// See [`GraphInterface::push_undirected_edge`] for details

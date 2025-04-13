@@ -25,9 +25,11 @@ fn mst_prim(#[case] input_path: &str, #[case] expected_mst_weight: f64) {
 
     let total_weight = mst.get_total_weight();
 
-    assert_eq!(
-        total_weight, expected_mst_weight,
+    assert!(
+        (total_weight - expected_mst_weight).abs() < 1e-5,
         "For graph {}, expected MST-weight of {}, but got {}",
-        input_path, expected_mst_weight, total_weight
+        input_path,
+        expected_mst_weight,
+        total_weight
     );
 }

@@ -65,7 +65,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
 }
 
 pub trait WeightedEdge {
-    type WeightType: Sum + Div<Output = Self::WeightType> + From<u8>;
+    type WeightType: Sum + Div<Output = Self::WeightType> + From<u8> + PartialOrd;
 
     fn get_weight(&self) -> Self::WeightType;
 }
