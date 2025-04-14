@@ -1,4 +1,4 @@
-use std::{fmt::Debug, hash::Hash};
+use std::{cmp::Reverse, collections::BinaryHeap, fmt::Debug, hash::Hash};
 
 use rustc_hash::FxHashSet;
 
@@ -19,63 +19,113 @@ where
     pub fn mst_prim(&self) -> Result<Graph<VId, Vertex, Edge>, GraphError<VId>> {
         let mut mst_graph = Graph::<VId, Vertex, Edge>::new(self.is_directed());
 
-        // Schritt 1: Wähle einen Knoten 𝑣0 ∊ 𝑉
+        // Priority queue
+        let mut edge_pq = BinaryHeap::new();
+
+        // Step 1: Take an initial vertex from the graph
         let mut vertices_iter = self.get_all_vertices().into_iter();
         let v0 = match vertices_iter.next() {
             Some(v) => v,
-            // If the graph has no vertices -> abort
+            // Wenn der Graph leer ist -> stopp
             None => return Ok(mst_graph),
         };
+        let start_id = v0.get_id();
 
         mst_graph.push_vertex(v0.clone())?;
 
+        // Store all vertices, that still have to be processed
         let mut remaining_vertices = vertices_iter.map(|v| v.get_id()).collect::<FxHashSet<_>>();
 
-        let mut edges = self
-            .get_adjacent_vertices_with_edges(&v0.get_id())?
-            .into_iter()
-            .map(|(to, edge)| (v0, to, edge))
-            .collect::<Vec<_>>();
+        // Add initial edges from the start vertex to the priority queue
+        for (neighbor_vertex, edge) in self.get_adjacent_vertices_with_edges(&start_id)? {
+            let weight = edge.get_weight();
+            edge_pq.push(EdgeEntry::new(
+                // Reverse is used to make BinaryHeap behave as a min-heap based on weight
+                Reverse(weight),
+                start_id,
+                neighbor_vertex.get_id(),
+                edge,
+            ));
+        }
 
-        // Schritt 2: Solange 𝑇 noch nicht alle Knoten aus 𝐺 enthält, wiederhole die folgende Prozedur
-        // Wenn 𝑇 alle Knoten aus 𝐺 enthält, hat 𝑇 eine Kantenmenge von |V| -1 (Terminiert
-        // Algorithmus).
+        // Step 2: Loop while the new mst graph does not contain all vertices from the original graph
         while !remaining_vertices.is_empty() {
-            //   Schritt (a): Wählen Sie die billigste Kante aus, die von einem schon besuchten Knote
-            //     zu einem noch nicht besuchten Knoten geht.
-            edges.retain(|(_, v_to, _)| remaining_vertices.contains(&v_to.get_id()));
-            let (cheapest_v_from, cheapest_v_to, cheapest_edge) = *edges
-                .iter()
-                .min_by(|(_, _, e1), (_, _, e2)| {
-                    e1.get_weight()
-                        .partial_cmp(&e2.get_weight())
-                        .expect("TODO:")
-                })
-                .expect("TODO:");
+            //   Step (a): Choose the cheapest edge
+            let cheapest = match edge_pq.pop() {
+                Some(entry) => entry,
+                None => break, // No more reachable vertices
+            };
 
-            let cheapest_v_to_id = cheapest_v_to.get_id();
-            // Aus dem remaining vertices set löschen
-            remaining_vertices.remove(&cheapest_v_to_id);
+            // If the edge has already been visited -> skip
+            if !remaining_vertices.remove(&cheapest.to) {
+                continue;
+            }
 
-            // Schritt (b): Fügen Sie die Kante und den nun erreichbaren Knoten in den Baum T ein
-            // Nach und nach entsteht dann ein MST (der Baum wächst).
-            mst_graph.push_vertex(cheapest_v_to.clone())?;
-            mst_graph.push_undirected_edge(
-                cheapest_v_from.get_id(),
-                cheapest_v_to_id,
-                cheapest_edge.clone(),
-            )?;
+            // Step (b): Add the edge and the now reachable vertex to the new mst graph
+            mst_graph.push_vertex(self.get_vertex_by_id(&cheapest.to)?.to_owned())?;
+            mst_graph.push_undirected_edge(cheapest.from, cheapest.to, cheapest.edge.to_owned())?;
 
-            // Die neuen (nun erreichbaren Kanten) hinzufügen
-            edges.append(
-                &mut self
-                    .get_adjacent_vertices_with_edges(&cheapest_v_to_id)?
-                    .into_iter()
-                    .map(|(to, edge)| (cheapest_v_to, to, edge))
-                    .collect(),
-            );
+            // Also add the now reachable edges to the priority queue
+            for (neighbor_vertex, next_edge) in
+                self.get_adjacent_vertices_with_edges(&cheapest.to)?
+            {
+                let neighbor_id = neighbor_vertex.get_id();
+                // Skip if we already added that vertex
+                if !remaining_vertices.contains(&neighbor_id) {
+                    continue;
+                }
+
+                let next_weight = next_edge.get_weight();
+                edge_pq.push(EdgeEntry::new(
+                    Reverse(next_weight),
+                    cheapest.to,
+                    neighbor_id,
+                    next_edge,
+                ));
+            }
         }
 
         Ok(mst_graph)
+    }
+}
+
+// Helper struct for Min-Heap behavior if weights are floats or need custom ordering
+struct EdgeEntry<W: PartialOrd, VId, E> {
+    weight: W,
+    from: VId,
+    to: VId,
+    edge: E,
+}
+
+impl<W: PartialOrd, VId, E> EdgeEntry<W, VId, E> {
+    pub fn new(weight: W, from: VId, to: VId, edge: E) -> Self {
+        EdgeEntry {
+            weight,
+            from,
+            to,
+            edge,
+        }
+    }
+}
+
+impl<W: PartialOrd, VId, E> PartialEq for EdgeEntry<W, VId, E> {
+    fn eq(&self, other: &Self) -> bool {
+        self.weight == other.weight
+    }
+}
+
+impl<W: PartialOrd, VId, E> Eq for EdgeEntry<W, VId, E> {}
+
+impl<W: PartialOrd, VId, E> PartialOrd for EdgeEntry<W, VId, E> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<W: PartialOrd, VId, E> Ord for EdgeEntry<W, VId, E> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.weight
+            .partial_cmp(&other.weight)
+            .expect("Graph weights must not contain NaN values")
     }
 }
