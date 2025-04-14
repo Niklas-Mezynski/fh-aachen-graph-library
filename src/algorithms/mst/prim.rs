@@ -37,49 +37,43 @@ where
             .map(|(to, edge)| (v0, to, edge))
             .collect::<Vec<_>>();
 
-        edges.sort_by(|(_, _, e1), (_, _, e2)| {
-            e2.get_weight()
-                .partial_cmp(&e1.get_weight())
-                .expect("TODO:")
-        });
-
         // Schritt 2: Solange 𝑇 noch nicht alle Knoten aus 𝐺 enthält, wiederhole die folgende Prozedur
         // Wenn 𝑇 alle Knoten aus 𝐺 enthält, hat 𝑇 eine Kantenmenge von |V| -1 (Terminiert
         // Algorithmus).
         while !remaining_vertices.is_empty() {
             //   Schritt (a): Wählen Sie die billigste Kante aus, die von einem schon besuchten Knote
             //     zu einem noch nicht besuchten Knoten geht.
-            let cheapest = loop {
-                let cheapest = edges.pop().expect("TODO:");
-                let cheapest_vid = cheapest.1.get_id();
-                if remaining_vertices.contains(&cheapest_vid) {
-                    remaining_vertices.remove(&cheapest_vid);
-                    break cheapest;
-                }
-            };
+            edges.retain(|(_, v_to, _)| remaining_vertices.contains(&v_to.get_id()));
+            let (cheapest_v_from, cheapest_v_to, cheapest_edge) = *edges
+                .iter()
+                .min_by(|(_, _, e1), (_, _, e2)| {
+                    e1.get_weight()
+                        .partial_cmp(&e2.get_weight())
+                        .expect("TODO:")
+                })
+                .expect("TODO:");
+
+            let cheapest_v_to_id = cheapest_v_to.get_id();
+            // Aus dem remaining vertices set löschen
+            remaining_vertices.remove(&cheapest_v_to_id);
 
             // Schritt (b): Fügen Sie die Kante und den nun erreichbaren Knoten in den Baum T ein
             // Nach und nach entsteht dann ein MST (der Baum wächst).
-            mst_graph.push_vertex(cheapest.1.clone())?;
+            mst_graph.push_vertex(cheapest_v_to.clone())?;
             mst_graph.push_undirected_edge(
-                cheapest.0.get_id(),
-                cheapest.1.get_id(),
-                cheapest.2.clone(),
+                cheapest_v_from.get_id(),
+                cheapest_v_to_id,
+                cheapest_edge.clone(),
             )?;
 
             // Die neuen (nun erreichbaren Kanten) hinzufügen
             edges.append(
                 &mut self
-                    .get_adjacent_vertices_with_edges(&cheapest.1.get_id())?
+                    .get_adjacent_vertices_with_edges(&cheapest_v_to_id)?
                     .into_iter()
-                    .map(|(to, edge)| (cheapest.1, to, edge))
+                    .map(|(to, edge)| (cheapest_v_to, to, edge))
                     .collect(),
             );
-            edges.sort_by(|(_, _, e1), (_, _, e2)| {
-                e2.get_weight()
-                    .partial_cmp(&e1.get_weight())
-                    .expect("TODO:")
-            });
         }
 
         Ok(mst_graph)
