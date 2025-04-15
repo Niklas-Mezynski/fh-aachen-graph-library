@@ -281,6 +281,13 @@ where
     ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
         self.backend.get_adjacent_vertices_with_edges(vertex)
     }
+
+    /// Get all edges in the graph
+    ///
+    /// See [`GraphInterface::get_all_edges`] for details
+    pub fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
+        self.backend.get_all_edges()
+    }
 }
 
 // Implement the graph backend
@@ -349,6 +356,12 @@ where
     ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices_with_edges(vertex),
+        }
+    }
+
+    fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
+        match self {
+            Backend::AdjacencyList(graph) => graph.get_all_edges(),
         }
     }
 }

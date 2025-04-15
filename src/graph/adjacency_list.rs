@@ -180,6 +180,18 @@ where
             })
             .unwrap_or_default())
     }
+
+    fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
+        self.adjacency
+            .iter()
+            .flat_map(|(from_id, adjacency_list)| {
+                adjacency_list
+                    .iter()
+                    .map(|(to_id, edge)| (from_id, to_id, edge))
+                    .collect::<Vec<_>>()
+            })
+            .collect()
+    }
 }
 
 impl<VId, Vertex, Edge> WeightedGraphInterface<VId, Vertex, Edge>
@@ -476,5 +488,41 @@ mod tests {
 
         let total_weight = graph.get_total_weight();
         assert_eq!(total_weight, 30);
+    }
+
+    #[test]
+    fn test_get_all_edges_directed() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(true);
+        let v1 = MockVertex { id: 1 };
+        let v2 = MockVertex { id: 2 };
+        let v3 = MockVertex { id: 3 };
+        graph.push_vertex(v1).unwrap();
+        graph.push_vertex(v2).unwrap();
+        graph.push_vertex(v3).unwrap();
+        graph.push_edge(1, 2, 10).unwrap();
+        graph.push_edge(2, 3, 20).unwrap();
+        let mut edges = graph.get_all_edges();
+        edges.sort_by_key(|(from, to, _)| (**from, **to));
+        assert_eq!(edges, vec![(&1, &2, &10), (&2, &3, &20)]);
+    }
+
+    #[test]
+    fn test_get_all_edges_undirected() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(false);
+        let v1 = MockVertex { id: 1 };
+        let v2 = MockVertex { id: 2 };
+        let v3 = MockVertex { id: 3 };
+        graph.push_vertex(v1).unwrap();
+        graph.push_vertex(v2).unwrap();
+        graph.push_vertex(v3).unwrap();
+        graph.push_undirected_edge(1, 2, 10).unwrap();
+        graph.push_undirected_edge(2, 3, 20).unwrap();
+        let mut edges = graph.get_all_edges();
+        edges.sort_by_key(|(from, to, _)| (**from, **to));
+        // Only one direction per edge
+        assert_eq!(
+            edges,
+            vec![(&1, &2, &10), (&2, &1, &10), (&2, &3, &20), (&3, &2, &20)]
+        );
     }
 }

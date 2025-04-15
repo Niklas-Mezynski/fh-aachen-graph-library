@@ -48,6 +48,9 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// Get all vertices in the graph
     fn get_all_vertices(&self) -> Vec<&Vertex>;
 
+    /// Get all edges in the graph
+    fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)>;
+
     /// Get All direct neighbors
     ///
     /// # Errors
