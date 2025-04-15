@@ -48,16 +48,19 @@ where
                 visited.push(*current);
 
                 current = parent;
-                parent = self.sets.get(&x).ok_or(UnionFindError::VertexNotFound(x))?;
+                parent = self
+                    .sets
+                    .get(parent)
+                    .ok_or(UnionFindError::VertexNotFound(x))?;
             }
 
             *parent
         };
 
         // Path compression
-        // for visited in visited {
-        //     self.sets.entry(visited).and_modify(|entry| *entry = parent);
-        // }
+        for visited in visited.into_iter() {
+            self.sets.entry(visited).and_modify(|entry| *entry = parent);
+        }
 
         Ok(parent)
     }
@@ -66,8 +69,6 @@ where
     pub fn union(&mut self, x: VId, y: VId) -> Result<(), UnionFindError<VId>> {
         let parent_x = self.find(x)?;
         let parent_y = self.find(y)?;
-
-        dbg!(x, y, parent_x, parent_y);
 
         if parent_x == parent_y {
             return Err(UnionFindError::NotDisjunct(x, y, parent_x));
@@ -163,30 +164,24 @@ mod tests {
     }
 
     #[rstest]
+    /// Important! Reference for these test values can be found in Fig. 4 of the Kruskal Algorithm explanation  
+    /// https://www.hoever-downloads.fh-aachen.de/MathAlg/Unterlagen/geschuetzt/1-2_a_MST.pdf
     fn test_union_and_find(test_struct: UnionFind<u32>) {
-        // Important! Reference for these test values can be found in Fig. 4 of the Kruskal Algorithm explanation
-        // https://www.hoever-downloads.fh-aachen.de/MathAlg/Unterlagen/geschuetzt/1-2_a_MST.pdf
         let mut union_find = test_struct;
 
         // Test that union works
         assert!(union_find.union(1, 2).is_ok());
-        dbg!(&union_find);
         assert!(union_find.union(1, 3).is_ok());
-        dbg!(&union_find);
         assert!(union_find.union(2, 4).is_ok());
-        dbg!(&union_find);
         assert!(union_find.union(2, 5).is_ok());
-        dbg!(&union_find);
-        panic!();
         assert!(union_find.union(6, 7).is_ok());
-        dbg!(&union_find);
 
-        // Test that union fails if the sets are not disjunct
+        // Test union failing case
         let result = union_find.union(3, 2);
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            UnionFindError::NotDisjunct(2, 3, 3)
+            UnionFindError::NotDisjunct(3, 2, 5)
         ));
 
         // Test that find still returns correct values for all nodes
