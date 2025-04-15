@@ -213,30 +213,35 @@ where
     Vertex: WithID<VId>,
     Edge: Clone,
 {
-    /// Adds a new vertex to the graph
+    /// Adds a new vertex to the graph.
     ///
-    /// See [`GraphInterface::push_vertex`] for details
+    /// # Errors
+    /// - `GraphError::DuplicateVertex`: when trying to add a vertex with an ID that already exists in the graph
     pub fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
         self.backend.push_vertex(vertex)
     }
 
-    /// Adds a new directed edge between two vertices
+    /// Adds a new directed edge between two vertices.
     ///
-    /// See [`GraphInterface::push_edge`] for details
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
+    /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
+    /// - `GraphError::DirectedOperationOnUndirectedGraph`: when using on an undirected graph
     pub fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
         self.backend.push_edge(from, to, edge)
     }
 
-    /// Returns wether the graph is directed or not
-    ///
-    /// See [`GraphInterface::is_directed`] for details
+    /// Returns whether the graph is directed (true) or undirected (false).
     pub fn is_directed(&self) -> bool {
         self.backend.is_directed()
     }
 
-    /// Adds an undirected edge (edges in both directions) between two vertices
+    /// Adds an undirected edge (edges in both directions) between two vertices.
     ///
-    /// See [`GraphInterface::push_undirected_edge`] for details
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
+    /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
+    /// - `GraphError::UndirectedOperationOnDirectedGraph`: when using on a directed graph
     pub fn push_undirected_edge(
         &mut self,
         from: VId,
@@ -246,13 +251,22 @@ where
         self.backend.push_undirected_edge(from, to, edge)
     }
 
-    /// Gets a vertex by its ID
+    /// Gets a vertex by its ID.
     ///
-    /// See [`GraphInterface::get_vertex_by_id`] for details
+    /// Returns a reference to the vertex data for the given vertex ID.
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
     pub fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
         self.backend.get_vertex_by_id(vertex_id)
     }
 
+    /// Gets a mutable reference to a vertex by its ID.
+    ///
+    /// Returns a mutable reference to the vertex data for the given vertex ID.
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
     pub fn get_vertex_by_id_mut(
         &mut self,
         vertex_id: &VId,
@@ -260,21 +274,29 @@ where
         self.backend.get_vertex_by_id_mut(vertex_id)
     }
 
-    /// Get all vertices in the graph
+    /// Get all vertices in the graph.
     ///
-    /// See [`GraphInterface::get_all_vertices`] for details
+    /// Returns a vector of references to all vertices in the graph.
     pub fn get_all_vertices(&self) -> Vec<&Vertex> {
         self.backend.get_all_vertices()
     }
 
-    /// Get all direct neighbors of a vertex
+    /// Get all direct neighbors of a vertex.
     ///
-    /// See [`GraphInterface::get_adjacent_vertices`] for details
+    /// Returns a vector of references to all vertices directly connected to the given vertex.
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
     pub fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
         self.backend.get_adjacent_vertices(vertex)
     }
 
-    /// Get all direct neighbors of a vertex, with the corresponding edge
+    /// Get all direct neighbors of a vertex, with the corresponding edge.
+    ///
+    /// Returns a vector of tuples containing references to the neighbor vertex and the edge data.
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
     pub fn get_adjacent_vertices_with_edges(
         &self,
         vertex: &VId,
@@ -282,9 +304,9 @@ where
         self.backend.get_adjacent_vertices_with_edges(vertex)
     }
 
-    /// Get all edges in the graph
+    /// Get all edges in the graph.
     ///
-    /// See [`GraphInterface::get_all_edges`] for details
+    /// Returns a vector of tuples containing references to the source vertex ID, target vertex ID, and edge data.
     pub fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
         self.backend.get_all_edges()
     }

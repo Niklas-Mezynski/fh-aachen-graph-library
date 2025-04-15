@@ -8,29 +8,25 @@ pub trait WithID<IDType> {
 
 pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     // Basic Graph operations
-    /// Adds a new vertex to the graph
+
+    /// Adds a new vertex to the graph.
     ///
-    /// # Errors
-    /// - `GraphError::DuplicateVertex`: when trying to add a vertex with an ID that already exists in the graph
+    /// See [`Graph`] for detailed documentation.
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>>;
 
-    /// Adds a new directed edge between two vertices
+    /// Adds a new directed edge between two vertices.
     ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
-    /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
-    /// - `GraphError::DirectedOperationOnUndirectedGraph`: when using on an undirected graph
+    /// See [`Graph`] for detailed documentation.
     fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>>;
 
-    /// Returns wether the graph is a directed (true) or undirected (false) graph
+    /// Returns whether the graph is a directed (true) or undirected (false) graph.
+    ///
+    /// See [`Graph`] for detailed documentation.
     fn is_directed(&self) -> bool;
 
-    /// Adds an undirected edge (edges in both directions) between two vertices
+    /// Adds an undirected edge (edges in both directions) between two vertices.
     ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
-    /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
-    /// - `GraphError::UndirectedOperationOnDirectedGraph`: when using on an directed graph
+    /// See [`Graph`] for detailed documentation.
     fn push_undirected_edge(
         &mut self,
         from: VId,
@@ -39,28 +35,35 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     ) -> Result<(), GraphError<VId>>;
 
     // Graph queries
-    /// Get vertex data by vertex id
+
+    /// Get vertex data by vertex id.
+    ///
+    /// See [`Graph`] for detailed documentation.
     fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>>;
 
-    /// Get a mutable reference to vertex data by vertex id
+    /// Get a mutable reference to vertex data by vertex id.
+    ///
+    /// See [`Graph`] for detailed documentation.
     fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>>;
 
-    /// Get all vertices in the graph
+    /// Get all vertices in the graph.
+    ///
+    /// See [`Graph`] for detailed documentation.
     fn get_all_vertices(&self) -> Vec<&Vertex>;
 
-    /// Get all edges in the graph
+    /// Get all edges in the graph.
+    ///
+    /// See [`Graph`] for detailed documentation.
     fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)>;
 
-    /// Get All direct neighbors
+    /// Get all direct neighbors.
     ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when the vertex does not exist
+    /// See [`Graph`] for detailed documentation.
     fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
 
-    /// Get All direct neighbors including the edge data
+    /// Get all direct neighbors including the edge data.
     ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when the vertex does not exist
+    /// See [`Graph`] for detailed documentation.
     fn get_adjacent_vertices_with_edges(
         &self,
         vertex: &VId,
