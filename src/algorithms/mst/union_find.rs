@@ -11,6 +11,7 @@ where
     VId: Eq + Hash + Copy,
 {
     sets: FxHashMap<VId, VId>,
+    set_sizes: FxHashMap<VId, u32>, // Keep track of set sizes
 }
 
 impl<VId> UnionFind<VId>
@@ -20,16 +21,20 @@ where
     pub fn new() -> Self {
         UnionFind {
             sets: FxHashMap::default(),
+            // Tracking set size to always merge smaller sets into bigger ones
+            set_sizes: FxHashMap::default(),
         }
     }
 
     /// Adds a new Set with x as parent
     /// MakeSet(x)
     pub fn make_set(&mut self, x: VId) -> Result<(), UnionFindError<VId>> {
-        match self.sets.insert(x, x) {
-            Some(_) => Err(UnionFindError::DuplicateVertex(x)),
-            None => Ok(()),
+        if self.sets.contains_key(&x) {
+            return Err(UnionFindError::DuplicateVertex(x));
         }
+        self.sets.insert(x, x);
+        self.set_sizes.insert(x, 1);
+        Ok(())
     }
 
     /// Returns the parent of x
@@ -59,13 +64,13 @@ where
 
         // Path compression
         for visited in visited.into_iter() {
-            self.sets.entry(visited).and_modify(|entry| *entry = parent);
+            self.sets.insert(visited, parent);
         }
 
         Ok(parent)
     }
 
-    /// The disjunct sets x and y are merged, the new parent is the parent of y
+    /// The disjunct sets x and y are merged, the new parent is determined by rank
     pub fn union(&mut self, x: &VId, y: &VId) -> Result<(), UnionFindError<VId>> {
         let parent_x = self.find(x)?;
         let parent_y = self.find(y)?;
@@ -74,9 +79,27 @@ where
             return Err(UnionFindError::NotDisjunct(*x, *y, parent_x));
         }
 
-        self.sets
-            .entry(parent_x)
-            .and_modify(|entry| *entry = parent_y);
+        let size_x = *self
+            .set_sizes
+            .get(&parent_x)
+            .expect("Set sizes must exist if set item exist");
+        let size_y = *self
+            .set_sizes
+            .get(&parent_y)
+            .expect("Set sizes must exist if set item exist");
+
+        match size_x <= size_y {
+            true => {
+                // Merge x into y
+                self.sets.insert(parent_x, parent_y);
+                self.set_sizes.entry(parent_y).and_modify(|v| *v += size_x);
+            }
+            false => {
+                // Merge y into x
+                self.sets.insert(parent_y, parent_x);
+                self.set_sizes.entry(parent_x).and_modify(|v| *v += size_y);
+            }
+        }
 
         Ok(())
     }
@@ -151,21 +174,23 @@ mod tests {
         let mut test_struct = test_struct;
 
         // Test that union works
-        assert!(test_struct.union(&1, &2).is_ok());
-        assert!(test_struct.union(&1, &3).is_ok());
+        assert!(test_struct.union(&1, &2).is_ok()); // 2 Is the new parent of one
+        assert!(test_struct.union(&1, &3).is_ok()); // 3 gets merged into the set of one (because this set is already bigger)
+                                                    // Parent of all three nodes is 2
 
         // Test that union fails if the sets are not disjunct
         let result = test_struct.union(&2, &3);
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            UnionFindError::NotDisjunct(2, 3, 3)
+            UnionFindError::NotDisjunct(2, 3, 2)
         ));
     }
 
     #[rstest]
     /// Important! Reference for these test values can be found in Fig. 4 of the Kruskal Algorithm explanation  
     /// https://www.hoever-downloads.fh-aachen.de/MathAlg/Unterlagen/geschuetzt/1-2_a_MST.pdf
+    /// The results still had to be slightly updated as the implementation optimizes the Union operation to merge the smaller set into the bigger one
     fn test_union_and_find(test_struct: UnionFind<u32>) {
         let mut union_find = test_struct;
 
@@ -181,15 +206,15 @@ mod tests {
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            UnionFindError::NotDisjunct(3, 2, 5)
+            UnionFindError::NotDisjunct(3, 2, 2)
         ));
 
         // Test that find still returns correct values for all nodes
-        assert_eq!(union_find.find(&1).unwrap(), 5);
-        assert_eq!(union_find.find(&2).unwrap(), 5);
-        assert_eq!(union_find.find(&3).unwrap(), 5);
-        assert_eq!(union_find.find(&4).unwrap(), 5);
-        assert_eq!(union_find.find(&5).unwrap(), 5);
+        assert_eq!(union_find.find(&1).unwrap(), 2);
+        assert_eq!(union_find.find(&2).unwrap(), 2);
+        assert_eq!(union_find.find(&3).unwrap(), 2);
+        assert_eq!(union_find.find(&4).unwrap(), 2);
+        assert_eq!(union_find.find(&5).unwrap(), 2);
         assert_eq!(union_find.find(&6).unwrap(), 7);
         assert_eq!(union_find.find(&7).unwrap(), 7);
         assert_eq!(union_find.find(&8).unwrap(), 8);
