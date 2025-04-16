@@ -17,7 +17,8 @@ where
     ///
     /// Returns the MST as a new graph
     pub fn mst_prim(&self) -> Result<Graph<VId, Vertex, Edge>, GraphError<VId>> {
-        let mut mst_graph = Graph::<VId, Vertex, Edge>::new(self.is_directed());
+        let is_directed = self.is_directed();
+        let mut mst_graph = Graph::<VId, Vertex, Edge>::new(is_directed);
 
         // Priority queue
         let mut edge_pq = BinaryHeap::new();
@@ -63,7 +64,16 @@ where
 
             // Step (b): Add the edge and the now reachable vertex to the new mst graph
             mst_graph.push_vertex(self.get_vertex_by_id(&cheapest.to)?.to_owned())?;
-            mst_graph.push_undirected_edge(cheapest.from, cheapest.to, cheapest.edge.to_owned())?;
+            match is_directed {
+                true => {
+                    mst_graph.push_edge(cheapest.from, cheapest.to, cheapest.edge.to_owned())?
+                }
+                false => mst_graph.push_undirected_edge(
+                    cheapest.from,
+                    cheapest.to,
+                    cheapest.edge.to_owned(),
+                )?,
+            };
 
             // Also add the now reachable edges to the priority queue
             for (neighbor_vertex, next_edge) in
