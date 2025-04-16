@@ -15,7 +15,7 @@ enum Algorithms {
 #[case("resources/test_graphs/undirected_weighted/G_10_20.txt", 2785.62417)]
 #[case("resources/test_graphs/undirected_weighted/G_10_200.txt", 372.14417)]
 #[case("resources/test_graphs/undirected_weighted/G_100_200.txt", 27550.51488)]
-fn mst_prim(
+fn mst(
     #[case] input_path: &str,
     #[case] expected_mst_weight: f64,
     #[values(Algorithms::Prim, Algorithms::Kruskal)] algorithm: Algorithms,
