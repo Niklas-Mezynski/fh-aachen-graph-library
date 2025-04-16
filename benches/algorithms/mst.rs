@@ -23,7 +23,7 @@ pub fn mst(c: &mut Criterion) {
         })
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-        group.bench_function(BenchmarkId::new("build_mst", file), |b| {
+        group.bench_function(BenchmarkId::new("mst_prim", file), |b| {
             b.iter(|| {
                 graph
                     .mst_prim()
@@ -45,7 +45,7 @@ pub fn mst(c: &mut Criterion) {
         })
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-        group.bench_function(BenchmarkId::new("build_mst", file), |b| {
+        group.bench_function(BenchmarkId::new("mst_kruskal", file), |b| {
             b.iter(|| {
                 graph
                     .mst_kruskal()
