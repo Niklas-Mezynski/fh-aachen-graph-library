@@ -12,7 +12,7 @@ use super::union_find::{UnionFind, UnionFindError};
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Debug + Copy + Display + 'static,
+    VId: Eq + Hash + PartialOrd + Debug + Copy + Display + 'static,
     Vertex: WithID<VId> + Clone,
     Edge: WeightedEdge + Clone,
 {
@@ -45,7 +45,7 @@ where
         }
 
         // Pop each edge in edges (lowest first):
-        while let Some((from, to, weight, edge)) = edges.pop() {
+        while let Some((from, to, _weight, edge)) = edges.pop() {
             //  if adding e to MST would not create a circle:
             match union_find.union(from, to) {
                 Ok(_) => {

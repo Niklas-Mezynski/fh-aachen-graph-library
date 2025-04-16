@@ -76,7 +76,7 @@ impl<VId, Vertex: WithID<VId>, Edge> AdjacencyListGraph<VId, Vertex, Edge> {
 
 impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for AdjacencyListGraph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -182,15 +182,28 @@ where
     }
 
     fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
-        self.adjacency
-            .iter()
-            .flat_map(|(from_id, adjacency_list)| {
-                adjacency_list
-                    .iter()
-                    .map(|(to_id, edge)| (from_id, to_id, edge))
-                    .collect::<Vec<_>>()
-            })
-            .collect()
+        if self.is_directed {
+            self.adjacency
+                .iter()
+                .flat_map(|(from_id, adjacency_list)| {
+                    adjacency_list
+                        .iter()
+                        .map(|(to_id, edge)| (from_id, to_id, edge))
+                        .collect::<Vec<_>>()
+                })
+                .collect()
+        } else {
+            // For undirected graphs, only return (from, to) where from <= to (assuming VId: Ord)
+            let mut edges = Vec::new();
+            for (from_id, adjacency_list) in &self.adjacency {
+                for (to_id, edge) in adjacency_list {
+                    if from_id <= to_id {
+                        edges.push((from_id, to_id, edge));
+                    }
+                }
+            }
+            edges
+        }
     }
 }
 
@@ -520,9 +533,6 @@ mod tests {
         let mut edges = graph.get_all_edges();
         edges.sort_by_key(|(from, to, _)| (**from, **to));
         // Only one direction per edge
-        assert_eq!(
-            edges,
-            vec![(&1, &2, &10), (&2, &1, &10), (&2, &3, &20), (&3, &2, &20)]
-        );
+        assert_eq!(edges, vec![(&1, &2, &10), (&2, &3, &20)]);
     }
 }

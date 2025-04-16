@@ -6,7 +6,7 @@ use crate::{graph::WithID, Graph, GraphError};
 
 pub struct BfsIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge:,
 {
@@ -17,7 +17,7 @@ where
 
 impl<'a, VId, Vertex, Edge> BfsIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -42,7 +42,7 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for BfsIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -74,7 +74,7 @@ where
 
 pub struct BfsIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge:,
 {
@@ -85,7 +85,7 @@ where
 
 impl<'a, VId, Vertex, Edge> BfsIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -110,7 +110,7 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for BfsIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -151,7 +151,7 @@ where
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {

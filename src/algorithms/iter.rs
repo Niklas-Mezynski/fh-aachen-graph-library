@@ -30,7 +30,7 @@ impl Display for TraversalType {
 /// A wrapper enum around different graph iterator implementations
 pub enum GraphIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge:,
 {
@@ -40,7 +40,7 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for GraphIter<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -56,7 +56,7 @@ where
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -77,7 +77,7 @@ where
 /// A wrapper enum around different graph iterator implementations
 pub enum GraphIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge:,
 {
@@ -86,7 +86,7 @@ where
 
 impl<'a, VId, Vertex, Edge> Iterator for GraphIterMut<'a, VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -101,7 +101,7 @@ where
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {

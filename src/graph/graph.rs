@@ -32,7 +32,7 @@ where
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -209,7 +209,7 @@ impl Graph<VertexIDType, Vertex, ()> {
 // --- Implement the public facing methods directly on Graph ---
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {
@@ -307,9 +307,6 @@ where
     /// Get all edges in the graph.
     ///
     /// Returns a vector of tuples containing references to the source vertex ID, target vertex ID, and edge data.
-    ///
-    /// ## Warning
-    /// In undirected graphs, edges may be contained twice, once for each direction.
     pub fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
         self.backend.get_all_edges()
     }
@@ -318,7 +315,7 @@ where
 // Implement the graph backend
 impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Copy,
+    VId: Eq + Hash + PartialOrd + Copy,
     Vertex: WithID<VId>,
     Edge: Clone,
 {

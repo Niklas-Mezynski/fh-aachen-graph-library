@@ -9,7 +9,7 @@ use crate::{
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + Debug + Copy,
+    VId: Eq + Hash + PartialOrd + Debug + Copy,
     Vertex: WithID<VId> + Clone,
     Edge: WeightedEdge + Clone,
 {
