@@ -307,6 +307,9 @@ where
     /// Get all edges in the graph.
     ///
     /// Returns a vector of tuples containing references to the source vertex ID, target vertex ID, and edge data.
+    ///
+    /// ## Warning
+    /// In undirected graphs, edges may be contained twice, once for each direction.
     pub fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
         self.backend.get_all_edges()
     }

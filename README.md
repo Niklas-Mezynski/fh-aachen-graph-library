@@ -32,9 +32,9 @@ All benchmarks have been conducted on an Apple MacBook Pro 2023 with M2 Pro Chip
 
 | Input File    | Time Prim | Time Kruskal |
 | ------------- | --------- | ------------ |
-| G_1_2.txt     | 265.69 µs | X ms         |
-| G_1_20.txt    | 1.037 ms  | X ms         |
-| G_1_200.txt   | 6.425 ms  | X ms         |
-| G_10_20.txt   | 3.495 ms  | X ms         |
-| G_10_200.txt  | 13.373 ms | X ms         |
-| G_100_200.txt | 49.644 ms | X ms         |
+| G_1_2.txt     | 265.69 µs | 445.84 µs    |
+| G_1_20.txt    | 1.037 ms  | 3.0850 ms    |
+| G_1_200.txt   | 6.425 ms  | 31.339 ms    |
+| G_10_20.txt   | 3.495 ms  | 5.3749 ms    |
+| G_10_200.txt  | 13.373 ms | 36.624 ms    |
+| G_100_200.txt | 49.644 ms | 73.609 ms    |

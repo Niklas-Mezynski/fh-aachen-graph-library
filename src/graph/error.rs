@@ -1,4 +1,11 @@
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+};
+
 use thiserror::Error;
+
+use crate::algorithms::mst::union_find::UnionFindError;
 
 #[derive(Error, Debug)]
 pub enum GraphError<VId> {
@@ -28,6 +35,15 @@ pub enum GraphError<VId> {
 
     #[error("Cannot apply undirected operation on directed graph")]
     UndirectedOperationOnDirectedGraph,
+
+    #[error("Algorithm error: {0}")]
+    AlgorithmError(#[from] Box<dyn Error + 'static>),
+}
+
+impl<VId: Debug + Display + 'static> From<UnionFindError<VId>> for GraphError<VId> {
+    fn from(value: UnionFindError<VId>) -> Self {
+        Self::AlgorithmError(Box::new(value))
+    }
 }
 
 #[derive(Error, Debug)]

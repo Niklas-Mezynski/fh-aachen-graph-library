@@ -11,8 +11,8 @@ pub fn mst(c: &mut Criterion) {
         "resources/test_graphs/undirected_weighted/G_100_200.txt",
     ];
 
-    let mut group_prim = c.benchmark_group("Build MST (Prim)");
-
+    // Prim
+    let mut group = c.benchmark_group("Build MST (Prim)");
     for file in files {
         let graph = Graph::from_hoever_file_with_weights(file, false, |remaining| {
             EdgeWithWeight::new(
@@ -23,15 +23,37 @@ pub fn mst(c: &mut Criterion) {
         })
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-        group_prim.bench_function(BenchmarkId::new("build_mst", file), |b| {
+        group.bench_function(BenchmarkId::new("build_mst", file), |b| {
             b.iter(|| {
                 graph
                     .mst_prim()
                     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
             });
         });
+    }
+    group.finish();
+
+    // Kruskal
+    let mut group = c.benchmark_group("Build MST (Kruskal)");
+    for file in files {
+        let graph = Graph::from_hoever_file_with_weights(file, false, |remaining| {
+            EdgeWithWeight::new(
+                remaining[0]
+                    .parse()
+                    .expect("Graph file value must be a float"),
+            )
+        })
+        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
+        group.bench_function(BenchmarkId::new("build_mst", file), |b| {
+            b.iter(|| {
+                graph
+                    .mst_kruskal()
+                    .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
+            });
+        });
 
         // Add same test for group_kruskal
     }
-    group_prim.finish();
+    group.finish();
 }

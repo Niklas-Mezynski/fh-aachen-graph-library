@@ -34,14 +34,14 @@ where
 
     /// Returns the parent of x
     /// Also applies path compression while searching (adding all nodes on the way directly to the parent)
-    pub fn find(&mut self, x: VId) -> Result<VId, UnionFindError<VId>> {
+    pub fn find(&mut self, x: &VId) -> Result<VId, UnionFindError<VId>> {
         // Remember nodes we visit along the way
         let mut visited = vec![];
 
         // Find the parent
         let parent = {
-            let mut current = &x;
-            let mut parent = self.sets.get(&x).ok_or(UnionFindError::VertexNotFound(x))?;
+            let mut current = x;
+            let mut parent = self.sets.get(x).ok_or(UnionFindError::VertexNotFound(*x))?;
 
             // Walk up the chain until we find the parent
             while current != parent {
@@ -51,7 +51,7 @@ where
                 parent = self
                     .sets
                     .get(parent)
-                    .ok_or(UnionFindError::VertexNotFound(x))?;
+                    .ok_or(UnionFindError::VertexNotFound(*x))?;
             }
 
             *parent
@@ -66,12 +66,12 @@ where
     }
 
     /// The disjunct sets x and y are merged, the new parent is the parent of y
-    pub fn union(&mut self, x: VId, y: VId) -> Result<(), UnionFindError<VId>> {
+    pub fn union(&mut self, x: &VId, y: &VId) -> Result<(), UnionFindError<VId>> {
         let parent_x = self.find(x)?;
         let parent_y = self.find(y)?;
 
         if parent_x == parent_y {
-            return Err(UnionFindError::NotDisjunct(x, y, parent_x));
+            return Err(UnionFindError::NotDisjunct(*x, *y, parent_x));
         }
 
         self.sets
@@ -134,11 +134,11 @@ mod tests {
         let mut union_find = test_struct;
 
         // Test finding existing nodes
-        assert_eq!(union_find.find(1).unwrap(), 1);
-        assert_eq!(union_find.find(9).unwrap(), 9);
+        assert_eq!(union_find.find(&1).unwrap(), 1);
+        assert_eq!(union_find.find(&9).unwrap(), 9);
 
         // Test finding a non existing node
-        let result = union_find.find(0);
+        let result = union_find.find(&0);
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
@@ -151,11 +151,11 @@ mod tests {
         let mut test_struct = test_struct;
 
         // Test that union works
-        assert!(test_struct.union(1, 2).is_ok());
-        assert!(test_struct.union(1, 3).is_ok());
+        assert!(test_struct.union(&1, &2).is_ok());
+        assert!(test_struct.union(&1, &3).is_ok());
 
         // Test that union fails if the sets are not disjunct
-        let result = test_struct.union(2, 3);
+        let result = test_struct.union(&2, &3);
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
@@ -170,14 +170,14 @@ mod tests {
         let mut union_find = test_struct;
 
         // Test that union works
-        assert!(union_find.union(1, 2).is_ok());
-        assert!(union_find.union(1, 3).is_ok());
-        assert!(union_find.union(2, 4).is_ok());
-        assert!(union_find.union(2, 5).is_ok());
-        assert!(union_find.union(6, 7).is_ok());
+        assert!(union_find.union(&1, &2).is_ok());
+        assert!(union_find.union(&1, &3).is_ok());
+        assert!(union_find.union(&2, &4).is_ok());
+        assert!(union_find.union(&2, &5).is_ok());
+        assert!(union_find.union(&6, &7).is_ok());
 
         // Test union failing case
-        let result = union_find.union(3, 2);
+        let result = union_find.union(&3, &2);
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
@@ -185,14 +185,14 @@ mod tests {
         ));
 
         // Test that find still returns correct values for all nodes
-        assert_eq!(union_find.find(1).unwrap(), 5);
-        assert_eq!(union_find.find(2).unwrap(), 5);
-        assert_eq!(union_find.find(3).unwrap(), 5);
-        assert_eq!(union_find.find(4).unwrap(), 5);
-        assert_eq!(union_find.find(5).unwrap(), 5);
-        assert_eq!(union_find.find(6).unwrap(), 7);
-        assert_eq!(union_find.find(7).unwrap(), 7);
-        assert_eq!(union_find.find(8).unwrap(), 8);
-        assert_eq!(union_find.find(9).unwrap(), 9);
+        assert_eq!(union_find.find(&1).unwrap(), 5);
+        assert_eq!(union_find.find(&2).unwrap(), 5);
+        assert_eq!(union_find.find(&3).unwrap(), 5);
+        assert_eq!(union_find.find(&4).unwrap(), 5);
+        assert_eq!(union_find.find(&5).unwrap(), 5);
+        assert_eq!(union_find.find(&6).unwrap(), 7);
+        assert_eq!(union_find.find(&7).unwrap(), 7);
+        assert_eq!(union_find.find(&8).unwrap(), 8);
+        assert_eq!(union_find.find(&9).unwrap(), 9);
     }
 }
