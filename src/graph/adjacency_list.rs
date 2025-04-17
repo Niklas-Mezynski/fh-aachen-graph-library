@@ -91,25 +91,12 @@ where
     }
 
     fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
-        if !self.is_directed {
-            return Err(GraphError::DirectedOperationOnUndirectedGraph);
-        }
-
-        self.push_edge_internal(from, to, edge)
-    }
-
-    fn push_undirected_edge(
-        &mut self,
-        from: VId,
-        to: VId,
-        edge: Edge,
-    ) -> Result<(), GraphError<VId>> {
         if self.is_directed {
-            return Err(GraphError::UndirectedOperationOnDirectedGraph);
+            self.push_edge_internal(from, to, edge)?;
+        } else {
+            self.push_edge_internal(from, to, edge.clone())?;
+            self.push_edge_internal(to, from, edge)?;
         }
-
-        self.push_edge_internal(from, to, edge.clone())?;
-        self.push_edge_internal(to, from, edge)?;
         Ok(())
     }
 
@@ -298,9 +285,9 @@ mod tests {
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
 
-        assert!(graph.push_undirected_edge(1, 2, 10).is_ok());
+        assert!(graph.push_edge(1, 2, 10).is_ok());
         assert!(matches!(
-            graph.push_undirected_edge(1, 2, 20),
+            graph.push_edge(1, 2, 20),
             Err(GraphError::DuplicateEdge(1, 2))
         )); // Duplicate edge
 
@@ -313,36 +300,6 @@ mod tests {
         assert_eq!(adj_2.len(), 1);
         assert_eq!(adj_2[0].0, 1);
         assert_eq!(adj_2[0].1, 10);
-    }
-
-    #[test]
-    fn test_push_undirected_edge_on_directed_graph() {
-        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(true);
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
-
-        graph.push_vertex(vertex1).unwrap();
-        graph.push_vertex(vertex2).unwrap();
-
-        assert!(matches!(
-            graph.push_undirected_edge(1, 2, 10),
-            Err(GraphError::UndirectedOperationOnDirectedGraph)
-        ));
-    }
-
-    #[test]
-    fn test_push_directed_edge_on_undirected_graph() {
-        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(false);
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
-
-        graph.push_vertex(vertex1).unwrap();
-        graph.push_vertex(vertex2).unwrap();
-
-        assert!(matches!(
-            graph.push_edge(1, 2, 10),
-            Err(GraphError::DirectedOperationOnUndirectedGraph)
-        ));
     }
 
     #[test]
@@ -493,10 +450,10 @@ mod tests {
         graph.push_vertex(vertex3).unwrap();
 
         graph
-            .push_undirected_edge(1, 2, MockWeightedEdge { weight: 10 })
+            .push_edge(1, 2, MockWeightedEdge { weight: 10 })
             .unwrap();
         graph
-            .push_undirected_edge(1, 3, MockWeightedEdge { weight: 20 })
+            .push_edge(1, 3, MockWeightedEdge { weight: 20 })
             .unwrap();
 
         let total_weight = graph.get_total_weight();
@@ -528,8 +485,8 @@ mod tests {
         graph.push_vertex(v1).unwrap();
         graph.push_vertex(v2).unwrap();
         graph.push_vertex(v3).unwrap();
-        graph.push_undirected_edge(1, 2, 10).unwrap();
-        graph.push_undirected_edge(2, 3, 20).unwrap();
+        graph.push_edge(1, 2, 10).unwrap();
+        graph.push_edge(2, 3, 20).unwrap();
         let mut edges = graph.get_all_edges();
         edges.sort_by_key(|(from, to, _)| (**from, **to));
         // Only one direction per edge

@@ -8,7 +8,7 @@ use crate::{
     Graph, GraphError,
 };
 
-use super::union_find::{UnionFind, UnionFindError};
+use super::union_find::UnionFind;
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
@@ -47,18 +47,10 @@ where
         // Pop each edge in edges (lowest first):
         while let Some((from, to, _weight, edge)) = edges.pop() {
             //  if adding e to MST would not create a circle:
-            match union_find.union(from, to) {
-                Ok(_) => {
-                    // Add e to the MST
-                    match is_directed {
-                        true => mst_graph.push_edge(*from, *to, edge.to_owned())?,
-                        false => mst_graph.push_undirected_edge(*from, *to, edge.to_owned())?,
-                    }
-                }
-                Err(err) => match err {
-                    UnionFindError::NotDisjunct(_, _, _) => {}
-                    _ => return Err(GraphError::from(err)),
-                },
+            let was_merged = union_find.union(from, to)?;
+
+            if was_merged {
+                mst_graph.push_edge(*from, *to, edge.to_owned())?;
             }
         }
 

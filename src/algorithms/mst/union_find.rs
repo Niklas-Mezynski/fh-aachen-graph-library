@@ -70,13 +70,15 @@ where
         Ok(parent)
     }
 
-    /// The disjunct sets x and y are merged, the new parent is determined by rank
-    pub fn union(&mut self, x: &VId, y: &VId) -> Result<(), UnionFindError<VId>> {
+    /// The disjunct sets where x and y are in are merged, the new parent is determined by rank
+    ///
+    /// Returns `true` if the sets can be merged, `false` if both vertices are already in the same set
+    pub fn union(&mut self, x: &VId, y: &VId) -> Result<bool, UnionFindError<VId>> {
         let parent_x = self.find(x)?;
         let parent_y = self.find(y)?;
 
         if parent_x == parent_y {
-            return Err(UnionFindError::NotDisjunct(*x, *y, parent_x));
+            return Ok(false);
         }
 
         let size_x = *self
@@ -101,7 +103,7 @@ where
             }
         }
 
-        Ok(())
+        Ok(true)
     }
 }
 
@@ -112,9 +114,6 @@ pub enum UnionFindError<VId> {
 
     #[error("Vertex with ID {0} already exists")]
     DuplicateVertex(VId),
-
-    #[error("Sets not disjunct. {0} and {1} both have {2} as parent.")]
-    NotDisjunct(VId, VId, VId),
 }
 
 #[cfg(test)]
@@ -174,17 +173,13 @@ mod tests {
         let mut test_struct = test_struct;
 
         // Test that union works
-        assert!(test_struct.union(&1, &2).is_ok()); // 2 Is the new parent of one
-        assert!(test_struct.union(&1, &3).is_ok()); // 3 gets merged into the set of one (because this set is already bigger)
-                                                    // Parent of all three nodes is 2
+        assert!(test_struct.union(&1, &2).unwrap()); // 2 Is the new parent of one
+        assert!(test_struct.union(&1, &3).unwrap()); // 3 gets merged into the set of one (because this set is already bigger)
+                                                     // Parent of all three nodes is 2
 
         // Test that union fails if the sets are not disjunct
         let result = test_struct.union(&2, &3);
-        assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            UnionFindError::NotDisjunct(2, 3, 2)
-        ));
+        assert!(!result.unwrap());
     }
 
     #[rstest]
@@ -195,19 +190,15 @@ mod tests {
         let mut union_find = test_struct;
 
         // Test that union works
-        assert!(union_find.union(&1, &2).is_ok());
-        assert!(union_find.union(&1, &3).is_ok());
-        assert!(union_find.union(&2, &4).is_ok());
-        assert!(union_find.union(&2, &5).is_ok());
-        assert!(union_find.union(&6, &7).is_ok());
+        assert!(union_find.union(&1, &2).unwrap());
+        assert!(union_find.union(&1, &3).unwrap());
+        assert!(union_find.union(&2, &4).unwrap());
+        assert!(union_find.union(&2, &5).unwrap());
+        assert!(union_find.union(&6, &7).unwrap());
 
         // Test union failing case
         let result = union_find.union(&3, &2);
-        assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            UnionFindError::NotDisjunct(3, 2, 2)
-        ));
+        assert!(!result.unwrap());
 
         // Test that find still returns correct values for all nodes
         assert_eq!(union_find.find(&1).unwrap(), 2);

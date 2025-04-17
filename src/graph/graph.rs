@@ -98,10 +98,7 @@ where
 
         edges
             .into_iter()
-            .try_for_each(|(from, to, edge)| match directed {
-                true => graph.backend.push_edge(from, to, edge),
-                false => graph.backend.push_undirected_edge(from, to, edge),
-            })?;
+            .try_for_each(|(from, to, edge)| graph.backend.push_edge(from, to, edge))?;
 
         Ok(graph)
     }
@@ -222,11 +219,11 @@ where
     }
 
     /// Adds a new directed edge between two vertices.
+    /// In directed graphs, the order of the parameters matter. `from` is the starting vertex, `to` is the end vertex
     ///
     /// # Errors
     /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
     /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
-    /// - `GraphError::DirectedOperationOnUndirectedGraph`: when using on an undirected graph
     pub fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
         self.backend.push_edge(from, to, edge)
     }
@@ -234,21 +231,6 @@ where
     /// Returns whether the graph is directed (true) or undirected (false).
     pub fn is_directed(&self) -> bool {
         self.backend.is_directed()
-    }
-
-    /// Adds an undirected edge (edges in both directions) between two vertices.
-    ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
-    /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
-    /// - `GraphError::UndirectedOperationOnDirectedGraph`: when using on a directed graph
-    pub fn push_undirected_edge(
-        &mut self,
-        from: VId,
-        to: VId,
-        edge: Edge,
-    ) -> Result<(), GraphError<VId>> {
-        self.backend.push_undirected_edge(from, to, edge)
     }
 
     /// Gets a vertex by its ID.
@@ -334,17 +316,6 @@ where
     fn is_directed(&self) -> bool {
         match self {
             Backend::AdjacencyList(graph) => graph.is_directed(),
-        }
-    }
-
-    fn push_undirected_edge(
-        &mut self,
-        from: VId,
-        to: VId,
-        edge: Edge,
-    ) -> Result<(), GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.push_undirected_edge(from, to, edge),
         }
     }
 

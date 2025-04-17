@@ -64,16 +64,7 @@ where
 
             // Step (b): Add the edge and the now reachable vertex to the new mst graph
             mst_graph.push_vertex(self.get_vertex_by_id(&cheapest.to)?.to_owned())?;
-            match is_directed {
-                true => {
-                    mst_graph.push_edge(cheapest.from, cheapest.to, cheapest.edge.to_owned())?
-                }
-                false => mst_graph.push_undirected_edge(
-                    cheapest.from,
-                    cheapest.to,
-                    cheapest.edge.to_owned(),
-                )?,
-            };
+            mst_graph.push_edge(cheapest.from, cheapest.to, cheapest.edge.to_owned())?;
 
             // Also add the now reachable edges to the priority queue
             for (neighbor_vertex, next_edge) in

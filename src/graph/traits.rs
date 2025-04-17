@@ -14,7 +14,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// See [`Graph`] for detailed documentation.
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>>;
 
-    /// Adds a new directed edge between two vertices.
+    /// Adds a new edge between two vertices.
     ///
     /// See [`Graph`] for detailed documentation.
     fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>>;
@@ -23,16 +23,6 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     ///
     /// See [`Graph`] for detailed documentation.
     fn is_directed(&self) -> bool;
-
-    /// Adds an undirected edge (edges in both directions) between two vertices.
-    ///
-    /// See [`Graph`] for detailed documentation.
-    fn push_undirected_edge(
-        &mut self,
-        from: VId,
-        to: VId,
-        edge: Edge,
-    ) -> Result<(), GraphError<VId>>;
 
     // Graph queries
 
