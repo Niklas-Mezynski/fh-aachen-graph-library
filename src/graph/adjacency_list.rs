@@ -192,6 +192,19 @@ where
             edges
         }
     }
+
+    fn vertex_count(&self) -> usize {
+        self.vertices.len()
+    }
+
+    fn edge_count(&self) -> usize {
+        let edge_count: usize = self.adjacency.values().map(|adj| adj.len()).sum();
+        if self.is_directed {
+            edge_count
+        } else {
+            edge_count / 2
+        }
+    }
 }
 
 impl<VId, Vertex, Edge> WeightedGraphInterface<VId, Vertex, Edge>
@@ -491,5 +504,61 @@ mod tests {
         edges.sort_by_key(|(from, to, _)| (**from, **to));
         // Only one direction per edge
         assert_eq!(edges, vec![(&1, &2, &10), (&2, &3, &20)]);
+    }
+
+    #[test]
+    fn test_vertex_count() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, ()> = AdjacencyListGraph::new(true);
+        assert_eq!(graph.vertex_count(), 0);
+
+        graph.push_vertex(MockVertex { id: 1 }).unwrap();
+        assert_eq!(graph.vertex_count(), 1);
+
+        graph.push_vertex(MockVertex { id: 2 }).unwrap();
+        assert_eq!(graph.vertex_count(), 2);
+
+        // Duplicate vertex should not increase count
+        assert!(graph.push_vertex(MockVertex { id: 1 }).is_err());
+        assert_eq!(graph.vertex_count(), 2);
+    }
+
+    #[test]
+    fn test_edge_count_directed() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(true);
+        graph.push_vertex(MockVertex { id: 1 }).unwrap();
+        graph.push_vertex(MockVertex { id: 2 }).unwrap();
+        graph.push_vertex(MockVertex { id: 3 }).unwrap();
+
+        assert_eq!(graph.edge_count(), 0);
+
+        graph.push_edge(1, 2, 10).unwrap();
+        assert_eq!(graph.edge_count(), 1);
+
+        graph.push_edge(2, 3, 20).unwrap();
+        assert_eq!(graph.edge_count(), 2);
+
+        // Duplicate edge should not increase count
+        assert!(graph.push_edge(1, 2, 30).is_err());
+        assert_eq!(graph.edge_count(), 2);
+    }
+
+    #[test]
+    fn test_edge_count_undirected() {
+        let mut graph: AdjacencyListGraph<u32, MockVertex, u32> = AdjacencyListGraph::new(false);
+        graph.push_vertex(MockVertex { id: 1 }).unwrap();
+        graph.push_vertex(MockVertex { id: 2 }).unwrap();
+        graph.push_vertex(MockVertex { id: 3 }).unwrap();
+
+        assert_eq!(graph.edge_count(), 0);
+
+        graph.push_edge(1, 2, 10).unwrap();
+        assert_eq!(graph.edge_count(), 1);
+
+        graph.push_edge(2, 3, 20).unwrap();
+        assert_eq!(graph.edge_count(), 2);
+
+        // Duplicate edge should not increase count
+        assert!(graph.push_edge(1, 2, 30).is_err());
+        assert_eq!(graph.edge_count(), 2);
     }
 }

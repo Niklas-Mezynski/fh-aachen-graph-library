@@ -44,6 +44,8 @@ where
             mst_graph.push_vertex(v.clone())?;
         }
 
+        let mut edge_count = 0;
+        let target_edge_count = mst_graph.vertex_count() - 1;
         // Pop each edge in edges (lowest first):
         while let Some((from, to, _weight, edge)) = edges.pop() {
             //  if adding e to MST would not create a circle:
@@ -51,6 +53,12 @@ where
 
             if was_merged {
                 mst_graph.push_edge(*from, *to, edge.to_owned())?;
+                edge_count += 1;
+            }
+
+            // Early abort when n-1 edges have been visited
+            if edge_count >= target_edge_count {
+                break;
             }
         }
 

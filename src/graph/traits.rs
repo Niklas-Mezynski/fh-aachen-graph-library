@@ -58,6 +58,12 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
         &self,
         vertex: &VId,
     ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>>;
+
+    /// Returns the number of vertices in the graph.
+    fn vertex_count(&self) -> usize;
+
+    /// Returns the number of edges in the graph.
+    fn edge_count(&self) -> usize;
 }
 
 pub trait WeightedEdge {

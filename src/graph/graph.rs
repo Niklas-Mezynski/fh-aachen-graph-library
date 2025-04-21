@@ -292,6 +292,16 @@ where
     pub fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
         self.backend.get_all_edges()
     }
+
+    /// Returns the number of vertices in the graph.
+    pub fn vertex_count(&self) -> usize {
+        self.backend.vertex_count()
+    }
+
+    /// Returns the number of edges in the graph.
+    pub fn edge_count(&self) -> usize {
+        self.backend.edge_count()
+    }
 }
 
 // Implement the graph backend
@@ -355,6 +365,18 @@ where
     fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_all_edges(),
+        }
+    }
+
+    fn vertex_count(&self) -> usize {
+        match self {
+            Backend::AdjacencyList(graph) => graph.vertex_count(),
+        }
+    }
+
+    fn edge_count(&self) -> usize {
+        match self {
+            Backend::AdjacencyList(graph) => graph.edge_count(),
         }
     }
 }
