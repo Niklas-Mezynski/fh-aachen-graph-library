@@ -25,7 +25,9 @@ where
         graph: &'a Graph<VId, Vertex, Edge>,
         start_vertex: VId,
     ) -> Result<Self, GraphError<VId>> {
-        let _ = graph.get_vertex_by_id(&start_vertex)?; // Check if it exists
+        graph
+            .get_vertex_by_id(&start_vertex)
+            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
 
         let queue = VecDeque::from([start_vertex]);
 
@@ -51,9 +53,8 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
             // Add unvisited neighbors to queue
-            let neighbors = self.graph.get_adjacent_vertices(&next_id).expect(
-                "get_adjacent_vertices should not error as the vertices in the queue must exist",
-            );
+            let neighbors = self.graph.get_adjacent_vertices(&next_id);
+
             for v in neighbors {
                 let vid = v.get_id();
                 if !self.visited.contains(&vid) {
@@ -93,7 +94,9 @@ where
         graph: &'a mut Graph<VId, Vertex, Edge>,
         start_vertex: VId,
     ) -> Result<Self, GraphError<VId>> {
-        let _ = graph.get_vertex_by_id(&start_vertex)?; // Check if it exists
+        graph
+            .get_vertex_by_id(&start_vertex)
+            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
 
         let queue = VecDeque::from([start_vertex]);
 
@@ -119,9 +122,8 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
             // Add unvisited neighbors to queue
-            let neighbors = self.graph.get_adjacent_vertices(&next_id).expect(
-                "get_adjacent_vertices should not error as the vertices in the queue must exist",
-            );
+            let neighbors = self.graph.get_adjacent_vertices(&next_id);
+
             for v in neighbors {
                 let vid = v.get_id();
                 if !self.visited.contains(&vid) {

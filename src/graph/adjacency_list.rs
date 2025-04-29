@@ -104,29 +104,20 @@ where
         self.is_directed
     }
 
-    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
-        self.vertices
-            .get(vertex_id)
-            .ok_or(GraphError::VertexNotFound(*vertex_id))
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Option<&Vertex> {
+        self.vertices.get(vertex_id)
     }
 
-    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>> {
-        self.vertices
-            .get_mut(id)
-            .ok_or(GraphError::VertexNotFound(*id))
+    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Option<&mut Vertex> {
+        self.vertices.get_mut(id)
     }
 
     fn get_all_vertices(&self) -> Vec<&Vertex> {
         self.vertices.values().collect()
     }
 
-    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
-        if !self.vertices.contains_key(vertex) {
-            return Err(GraphError::VertexNotFound(*vertex));
-        }
-
-        Ok(self
-            .adjacency
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
+        self.adjacency
             .get(vertex)
             .map(|edges| {
                 edges
@@ -138,19 +129,11 @@ where
                     })
                     .collect()
             })
-            .unwrap_or_default())
+            .unwrap_or_default()
     }
 
-    fn get_adjacent_vertices_with_edges(
-        &self,
-        vertex: &VId,
-    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
-        if !self.vertices.contains_key(vertex) {
-            return Err(GraphError::VertexNotFound(*vertex));
-        }
-
-        Ok(self
-            .adjacency
+    fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)> {
+        self.adjacency
             .get(vertex)
             .map(|edges| {
                 edges
@@ -165,7 +148,7 @@ where
                     })
                     .collect()
             })
-            .unwrap_or_default())
+            .unwrap_or_default()
     }
 
     fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
@@ -328,10 +311,7 @@ mod tests {
         assert_eq!(v.id, 1);
         let v = graph.get_vertex_by_id(&2).unwrap();
         assert_eq!(v.id, 2);
-        assert!(matches!(
-            graph.get_vertex_by_id(&3),
-            Err(GraphError::VertexNotFound(3))
-        ));
+        assert!(graph.get_vertex_by_id(&3).is_none());
     }
 
     #[test]
@@ -369,18 +349,15 @@ mod tests {
         graph.push_edge(1, 2, 10).unwrap();
         graph.push_edge(1, 3, 20).unwrap();
 
-        let adjacent_vertices = graph.get_adjacent_vertices(&1).unwrap();
+        let adjacent_vertices = graph.get_adjacent_vertices(&1);
         assert_eq!(adjacent_vertices.len(), 2);
         assert_eq!(adjacent_vertices[0].id, 2);
         assert_eq!(adjacent_vertices[1].id, 3);
 
-        let adjacent_vertices = graph.get_adjacent_vertices(&2).unwrap();
+        let adjacent_vertices = graph.get_adjacent_vertices(&2);
         assert_eq!(adjacent_vertices.len(), 0);
 
-        assert!(matches!(
-            graph.get_adjacent_vertices(&4),
-            Err(GraphError::VertexNotFound(4))
-        ));
+        assert_eq!(graph.get_adjacent_vertices(&4).len(), 0);
     }
 
     #[test]
@@ -397,7 +374,7 @@ mod tests {
         graph.push_edge(1, 2, 10).unwrap();
         graph.push_edge(1, 3, 20).unwrap();
 
-        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&1).unwrap();
+        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&1);
         assert_eq!(adjacent_vertices.len(), 2);
         assert_eq!(adjacent_vertices[0].0.id, 2);
         assert_eq!(adjacent_vertices[0].1, &10);
@@ -405,13 +382,10 @@ mod tests {
         assert_eq!(adjacent_vertices[1].0.id, 3);
         assert_eq!(adjacent_vertices[1].1, &20);
 
-        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&2).unwrap();
+        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&2);
         assert_eq!(adjacent_vertices.len(), 0);
 
-        assert!(matches!(
-            graph.get_adjacent_vertices_with_edges(&4),
-            Err(GraphError::VertexNotFound(4))
-        ));
+        assert_eq!(graph.get_adjacent_vertices(&4).len(), 0);
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -29,12 +29,12 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// Get vertex data by vertex id.
     ///
     /// See [`Graph`] for detailed documentation.
-    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>>;
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Option<&Vertex>;
 
     /// Get a mutable reference to vertex data by vertex id.
     ///
     /// See [`Graph`] for detailed documentation.
-    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>>;
+    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Option<&mut Vertex>;
 
     /// Get all vertices in the graph.
     ///
@@ -49,15 +49,12 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// Get all direct neighbors.
     ///
     /// See [`Graph`] for detailed documentation.
-    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>>;
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex>;
 
     /// Get all direct neighbors including the edge data.
     ///
     /// See [`Graph`] for detailed documentation.
-    fn get_adjacent_vertices_with_edges(
-        &self,
-        vertex: &VId,
-    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>>;
+    fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)>;
 
     /// Returns the number of vertices in the graph.
     fn vertex_count(&self) -> usize;

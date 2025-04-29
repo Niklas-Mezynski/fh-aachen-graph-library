@@ -235,24 +235,18 @@ where
 
     /// Gets a vertex by its ID.
     ///
-    /// Returns a reference to the vertex data for the given vertex ID.
-    ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when the vertex does not exist
-    pub fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+    /// Returns a reference to the vertex data for the given vertex ID or None if the vertex does not exist.
+    pub fn get_vertex_by_id(&self, vertex_id: &VId) -> Option<&Vertex> {
         self.backend.get_vertex_by_id(vertex_id)
     }
 
     /// Gets a mutable reference to a vertex by its ID.
     ///
-    /// Returns a mutable reference to the vertex data for the given vertex ID.
+    /// Returns a mutable reference to the vertex data for the given vertex ID or None if the vertex does not exist.
     ///
     /// # Errors
     /// - `GraphError::VertexNotFound`: when the vertex does not exist
-    pub fn get_vertex_by_id_mut(
-        &mut self,
-        vertex_id: &VId,
-    ) -> Result<&mut Vertex, GraphError<VId>> {
+    pub fn get_vertex_by_id_mut(&mut self, vertex_id: &VId) -> Option<&mut Vertex> {
         self.backend.get_vertex_by_id_mut(vertex_id)
     }
 
@@ -267,9 +261,8 @@ where
     ///
     /// Returns a vector of references to all vertices directly connected to the given vertex.
     ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when the vertex does not exist
-    pub fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+    /// Returns an empty vec, if the vertex was not found
+    pub fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
         self.backend.get_adjacent_vertices(vertex)
     }
 
@@ -277,12 +270,8 @@ where
     ///
     /// Returns a vector of tuples containing references to the neighbor vertex and the edge data.
     ///
-    /// # Errors
-    /// - `GraphError::VertexNotFound`: when the vertex does not exist
-    pub fn get_adjacent_vertices_with_edges(
-        &self,
-        vertex: &VId,
-    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
+    /// Returns an empty vec, if the vertex was not found
+    pub fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)> {
         self.backend.get_adjacent_vertices_with_edges(vertex)
     }
 
@@ -329,13 +318,13 @@ where
         }
     }
 
-    fn get_vertex_by_id(&self, vertex_id: &VId) -> Result<&Vertex, GraphError<VId>> {
+    fn get_vertex_by_id(&self, vertex_id: &VId) -> Option<&Vertex> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_vertex_by_id(vertex_id),
         }
     }
 
-    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Result<&mut Vertex, GraphError<VId>> {
+    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Option<&mut Vertex> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_vertex_by_id_mut(id),
         }
@@ -347,16 +336,13 @@ where
         }
     }
 
-    fn get_adjacent_vertices(&self, vertex: &VId) -> Result<Vec<&Vertex>, GraphError<VId>> {
+    fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex),
         }
     }
 
-    fn get_adjacent_vertices_with_edges(
-        &self,
-        vertex: &VId,
-    ) -> Result<Vec<(&Vertex, &Edge)>, GraphError<VId>> {
+    fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)> {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices_with_edges(vertex),
         }
