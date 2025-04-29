@@ -26,7 +26,7 @@ pub fn mst(c: &mut Criterion) {
         group.bench_function(BenchmarkId::new("mst_prim", file), |b| {
             b.iter(|| {
                 graph
-                    .mst_prim()
+                    .mst_prim(None)
                     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
             });
         });

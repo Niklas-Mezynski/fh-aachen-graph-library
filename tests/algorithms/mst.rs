@@ -30,7 +30,7 @@ fn mst(
     .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     let mst = match algorithm {
-        Algorithms::Prim => graph.mst_prim(),
+        Algorithms::Prim => graph.mst_prim(None),
         Algorithms::Kruskal => graph.mst_kruskal(),
     }
     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));

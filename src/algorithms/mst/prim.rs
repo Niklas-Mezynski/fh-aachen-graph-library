@@ -16,26 +16,51 @@ where
     /// Creates an MST using the Prim algorithm.
     ///
     /// Returns the MST as a new graph
-    pub fn mst_prim(&self) -> Result<Graph<VId, Vertex, Edge>, GraphError<VId>> {
+    pub fn mst_prim(
+        &self,
+        start_vertex_id: Option<VId>,
+    ) -> Result<Graph<VId, Vertex, Edge>, GraphError<VId>> {
         let is_directed = self.is_directed();
         let mut mst_graph = Graph::<VId, Vertex, Edge>::new(is_directed);
 
         // Priority queue
         let mut edge_pq = BinaryHeap::new();
 
-        // Step 1: Take an initial vertex from the graph
-        let mut vertices_iter = self.get_all_vertices();
-        let v0 = match vertices_iter.next() {
-            Some(v) => v,
-            // Wenn der Graph leer ist -> stopp
-            None => return Ok(mst_graph),
+        // Step 1: Take an initial vertex from the graph and
+        // store all vertices, that still have to be processed
+
+        let (mut remaining_vertices, v0) = match start_vertex_id {
+            Some(start_vertex_id) => {
+                let v0 = self
+                    .get_vertex_by_id(&start_vertex_id)
+                    .ok_or_else(|| GraphError::VertexNotFound(start_vertex_id))?;
+
+                let mut remaining_vertices = self
+                    .get_all_vertices()
+                    .map(|v| v.get_id())
+                    .collect::<FxHashSet<_>>();
+
+                remaining_vertices.remove(&v0.get_id());
+
+                (remaining_vertices, v0)
+            }
+            None => {
+                let mut vertices_iter = self.get_all_vertices();
+                let v0 = match vertices_iter.next() {
+                    Some(v) => v,
+                    // Wenn der Graph leer ist -> stopp
+                    None => return Ok(mst_graph),
+                };
+
+                (
+                    vertices_iter.map(|v| v.get_id()).collect::<FxHashSet<_>>(),
+                    v0,
+                )
+            }
         };
         let start_id = v0.get_id();
 
         mst_graph.push_vertex(v0.clone())?;
-
-        // Store all vertices, that still have to be processed
-        let mut remaining_vertices = vertices_iter.map(|v| v.get_id()).collect::<FxHashSet<_>>();
 
         // Add initial edges from the start vertex to the priority queue
         for (neighbor_vertex, edge) in self.get_adjacent_vertices_with_edges(&start_id) {
