@@ -2,6 +2,7 @@
 mod graph;
 
 mod adjacency_list;
+mod adjacency_matrix;
 pub mod error;
 mod graph_structs;
 mod traits;
