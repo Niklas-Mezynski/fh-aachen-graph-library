@@ -253,7 +253,10 @@ where
     /// Get all vertices in the graph.
     ///
     /// Returns a vector of references to all vertices in the graph.
-    pub fn get_all_vertices(&self) -> Vec<&Vertex> {
+    pub fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
+    where
+        Vertex: 'a,
+    {
         self.backend.get_all_vertices()
     }
 
@@ -330,7 +333,10 @@ where
         }
     }
 
-    fn get_all_vertices(&self) -> Vec<&Vertex> {
+    fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
+    where
+        Vertex: 'a,
+    {
         match self {
             Backend::AdjacencyList(graph) => graph.get_all_vertices(),
         }

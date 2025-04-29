@@ -7,8 +7,7 @@ pub trait WithID<IDType> {
 }
 
 pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
-    // Basic Graph operations
-
+    // --- Basic Graph operations ---
     /// Adds a new vertex to the graph.
     ///
     /// See [`Graph`] for detailed documentation.
@@ -39,7 +38,9 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     /// Get all vertices in the graph.
     ///
     /// See [`Graph`] for detailed documentation.
-    fn get_all_vertices(&self) -> Vec<&Vertex>;
+    fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
+    where
+        Vertex: 'a;
 
     /// Get all edges in the graph.
     ///

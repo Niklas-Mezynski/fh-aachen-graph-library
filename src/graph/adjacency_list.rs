@@ -112,8 +112,11 @@ where
         self.vertices.get_mut(id)
     }
 
-    fn get_all_vertices(&self) -> Vec<&Vertex> {
-        self.vertices.values().collect()
+    fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
+    where
+        Vertex: 'a,
+    {
+        self.vertices.values()
     }
 
     fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
@@ -324,11 +327,7 @@ mod tests {
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
 
-        let vertices: Vec<_> = graph
-            .get_all_vertices()
-            .iter()
-            .map(|v| v.get_id())
-            .collect();
+        let vertices: Vec<_> = graph.get_all_vertices().map(|v| v.get_id()).collect();
         assert_eq!(vertices.len(), 2);
         assert!(vertices.contains(&1));
         assert!(vertices.contains(&2));

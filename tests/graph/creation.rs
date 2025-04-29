@@ -13,7 +13,7 @@ fn create_from_file_creates_all_vertices(
     #[case] expected_vertices: usize,
 ) {
     let graph = Graph::from_hoever_file(input_path, false).unwrap();
-    let vertices = graph.get_all_vertices();
+    let vertices = graph.get_all_vertices().collect::<Vec<_>>();
     assert_eq!(vertices.len(), expected_vertices);
 }
 
@@ -36,6 +36,6 @@ fn create_from_file_with_weights_creates_all_vertices(
         )
     })
     .unwrap();
-    let vertices = graph.get_all_vertices();
+    let vertices = graph.get_all_vertices().collect::<Vec<_>>();
     assert_eq!(vertices.len(), expected_vertices);
 }

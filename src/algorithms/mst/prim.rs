@@ -24,7 +24,7 @@ where
         let mut edge_pq = BinaryHeap::new();
 
         // Step 1: Take an initial vertex from the graph
-        let mut vertices_iter = self.get_all_vertices().into_iter();
+        let mut vertices_iter = self.get_all_vertices();
         let v0 = match vertices_iter.next() {
             Some(v) => v,
             // Wenn der Graph leer ist -> stopp

@@ -18,7 +18,7 @@ where
         traversal_type: Option<TraversalType>,
     ) -> Result<u32, GraphError<VId>> {
         let iter_type = traversal_type.unwrap_or_default(); // Default to BFS
-        let mut vertices = VecDeque::from(self.get_all_vertices());
+        let mut vertices = self.get_all_vertices().collect::<VecDeque<_>>();
         let mut visited: FxHashSet<VId> = FxHashSet::default();
 
         let mut count: u32 = 0;

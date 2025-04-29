@@ -39,7 +39,7 @@ where
 
         // Put all vertices in a Union-Find struct
         let mut union_find = UnionFind::new();
-        for v in self.get_all_vertices().into_iter() {
+        for v in self.get_all_vertices() {
             union_find.make_set(v.get_id())?;
             mst_graph.push_vertex(v.clone())?;
         }
