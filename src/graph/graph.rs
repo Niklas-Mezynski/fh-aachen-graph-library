@@ -294,9 +294,7 @@ where
     /// Get all edges in the graph.
     ///
     /// Returns a vector of tuples containing references to the source vertex ID, target vertex ID, and edge data.
-    pub fn get_all_edges<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    pub fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (&'a VId, &'a VId, &'a Edge)>
     where
         VId: 'a,
         Edge: 'a,
@@ -383,7 +381,7 @@ where
         }
     }
 
-    fn get_all_edges<'a>(&'a self) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (&'a VId, &'a VId, &'a Edge)>
     where
         VId: 'a,
         Edge: 'a,

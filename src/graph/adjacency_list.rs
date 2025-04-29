@@ -160,7 +160,7 @@ where
             .flatten()
     }
 
-    fn get_all_edges<'a>(&'a self) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (&'a VId, &'a VId, &'a Edge)>
     where
         VId: 'a,
         Edge: 'a,
@@ -170,7 +170,7 @@ where
                 adjacency_list
                     .iter()
                     .map(move |(to_id, edge)| (from_id, to_id, edge))
-            }))
+            })) as Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
         } else {
             // For undirected graphs, only return (from, to) where from <= to (assuming VId: Ord)
             Box::new(self.adjacency.iter().flat_map(|(from_id, adjacency_list)| {
@@ -181,7 +181,7 @@ where
                         None
                     }
                 })
-            }))
+            })) as Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
         }
     }
 

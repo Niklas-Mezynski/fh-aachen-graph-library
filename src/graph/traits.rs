@@ -31,7 +31,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
         Vertex: 'a;
 
     /// Get all edges in the graph as an iterator.
-    fn get_all_edges<'a>(&'a self) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (&'a VId, &'a VId, &'a Edge)>
     where
         VId: 'a,
         Edge: 'a;
