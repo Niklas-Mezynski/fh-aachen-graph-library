@@ -26,7 +26,6 @@ where
         // Get all edges and sort them
         let mut edges = self
             .get_all_edges()
-            .into_iter()
             .map(|(v1, v2, e)| (v1, v2, e.get_weight(), e))
             .collect::<Vec<_>>();
 

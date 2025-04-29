@@ -119,63 +119,69 @@ where
         self.vertices.values()
     }
 
-    fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
+    fn get_adjacent_vertices<'a>(&'a self, vertex: &VId) -> impl Iterator<Item = &'a Vertex>
+    where
+        Vertex: 'a,
+    {
         self.adjacency
             .get(vertex)
             .map(|edges| {
-                edges
-                    .iter()
-                    .map(|(to_id, _)| {
+                edges.iter().map(|(to_id, _)| {
+                    self.vertices
+                        .get(to_id)
+                        .expect("All edges must connect to existing vertices")
+                })
+            })
+            .into_iter()
+            .flatten()
+    }
+
+    fn get_adjacent_vertices_with_edges<'a>(
+        &'a self,
+        vertex: &VId,
+    ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
+    where
+        Vertex: 'a,
+        Edge: 'a,
+    {
+        self.adjacency
+            .get(vertex)
+            .map(|edges| {
+                edges.iter().map(|(to_id, edge)| {
+                    (
                         self.vertices
                             .get(to_id)
-                            .expect("All edges must connect to existing vertices")
-                    })
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)> {
-        self.adjacency
-            .get(vertex)
-            .map(|edges| {
-                edges
-                    .iter()
-                    .map(|(to_id, edge)| {
-                        (
-                            self.vertices
-                                .get(to_id)
-                                .expect("All edges must connect to existing vertices"),
-                            edge,
-                        )
-                    })
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
-        if self.is_directed {
-            self.adjacency
-                .iter()
-                .flat_map(|(from_id, adjacency_list)| {
-                    adjacency_list
-                        .iter()
-                        .map(|(to_id, edge)| (from_id, to_id, edge))
-                        .collect::<Vec<_>>()
+                            .expect("All edges must connect to existing vertices"),
+                        edge,
+                    )
                 })
-                .collect()
+            })
+            .into_iter()
+            .flatten()
+    }
+
+    fn get_all_edges<'a>(&'a self) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    where
+        VId: 'a,
+        Edge: 'a,
+    {
+        if self.is_directed {
+            Box::new(self.adjacency.iter().flat_map(|(from_id, adjacency_list)| {
+                adjacency_list
+                    .iter()
+                    .map(move |(to_id, edge)| (from_id, to_id, edge))
+            }))
         } else {
             // For undirected graphs, only return (from, to) where from <= to (assuming VId: Ord)
-            let mut edges = Vec::new();
-            for (from_id, adjacency_list) in &self.adjacency {
-                for (to_id, edge) in adjacency_list {
+            Box::new(self.adjacency.iter().flat_map(|(from_id, adjacency_list)| {
+                adjacency_list.iter().filter_map(move |(to_id, edge)| {
                     if from_id <= to_id {
-                        edges.push((from_id, to_id, edge));
+                        Some((from_id, to_id, edge))
+                    } else {
+                        None
                     }
-                }
-            }
-            edges
+                })
+            }))
         }
     }
 
@@ -348,15 +354,15 @@ mod tests {
         graph.push_edge(1, 2, 10).unwrap();
         graph.push_edge(1, 3, 20).unwrap();
 
-        let adjacent_vertices = graph.get_adjacent_vertices(&1);
+        let adjacent_vertices = graph.get_adjacent_vertices(&1).collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 2);
         assert_eq!(adjacent_vertices[0].id, 2);
         assert_eq!(adjacent_vertices[1].id, 3);
 
-        let adjacent_vertices = graph.get_adjacent_vertices(&2);
+        let adjacent_vertices = graph.get_adjacent_vertices(&2).collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 0);
 
-        assert_eq!(graph.get_adjacent_vertices(&4).len(), 0);
+        assert_eq!(graph.get_adjacent_vertices(&4).collect::<Vec<_>>().len(), 0);
     }
 
     #[test]
@@ -373,7 +379,9 @@ mod tests {
         graph.push_edge(1, 2, 10).unwrap();
         graph.push_edge(1, 3, 20).unwrap();
 
-        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&1);
+        let adjacent_vertices = graph
+            .get_adjacent_vertices_with_edges(&1)
+            .collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 2);
         assert_eq!(adjacent_vertices[0].0.id, 2);
         assert_eq!(adjacent_vertices[0].1, &10);
@@ -381,10 +389,18 @@ mod tests {
         assert_eq!(adjacent_vertices[1].0.id, 3);
         assert_eq!(adjacent_vertices[1].1, &20);
 
-        let adjacent_vertices = graph.get_adjacent_vertices_with_edges(&2);
+        let adjacent_vertices = graph
+            .get_adjacent_vertices_with_edges(&2)
+            .collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 0);
 
-        assert_eq!(graph.get_adjacent_vertices(&4).len(), 0);
+        assert_eq!(
+            graph
+                .get_adjacent_vertices_with_edges(&4)
+                .collect::<Vec<_>>()
+                .len(),
+            0
+        );
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -457,7 +473,7 @@ mod tests {
         graph.push_vertex(v3).unwrap();
         graph.push_edge(1, 2, 10).unwrap();
         graph.push_edge(2, 3, 20).unwrap();
-        let mut edges = graph.get_all_edges();
+        let mut edges = graph.get_all_edges().collect::<Vec<_>>();
         edges.sort_by_key(|(from, to, _)| (**from, **to));
         assert_eq!(edges, vec![(&1, &2, &10), (&2, &3, &20)]);
     }
@@ -473,7 +489,7 @@ mod tests {
         graph.push_vertex(v3).unwrap();
         graph.push_edge(1, 2, 10).unwrap();
         graph.push_edge(2, 3, 20).unwrap();
-        let mut edges = graph.get_all_edges();
+        let mut edges = graph.get_all_edges().collect::<Vec<_>>();
         edges.sort_by_key(|(from, to, _)| (**from, **to));
         // Only one direction per edge
         assert_eq!(edges, vec![(&1, &2, &10), (&2, &3, &20)]);

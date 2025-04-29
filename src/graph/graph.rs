@@ -265,7 +265,13 @@ where
     /// Returns a vector of references to all vertices directly connected to the given vertex.
     ///
     /// Returns an empty vec, if the vertex was not found
-    pub fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
+    pub fn get_adjacent_vertices<'a, 'b>(
+        &'a self,
+        vertex: &'b VId,
+    ) -> impl Iterator<Item = &'a Vertex> + use<'a, 'b, VId, Vertex, Edge>
+    where
+        Vertex: 'a,
+    {
         self.backend.get_adjacent_vertices(vertex)
     }
 
@@ -274,14 +280,27 @@ where
     /// Returns a vector of tuples containing references to the neighbor vertex and the edge data.
     ///
     /// Returns an empty vec, if the vertex was not found
-    pub fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)> {
+    pub fn get_adjacent_vertices_with_edges<'a, 'b>(
+        &'a self,
+        vertex: &'b VId,
+    ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)> + use<'a, 'b, VId, Vertex, Edge>
+    where
+        Vertex: 'a,
+        Edge: 'a,
+    {
         self.backend.get_adjacent_vertices_with_edges(vertex)
     }
 
     /// Get all edges in the graph.
     ///
     /// Returns a vector of tuples containing references to the source vertex ID, target vertex ID, and edge data.
-    pub fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
+    pub fn get_all_edges<'a>(
+        &'a self,
+    ) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    where
+        VId: 'a,
+        Edge: 'a,
+    {
         self.backend.get_all_edges()
     }
 
@@ -342,19 +361,33 @@ where
         }
     }
 
-    fn get_adjacent_vertices(&self, vertex: &VId) -> Vec<&Vertex> {
+    fn get_adjacent_vertices<'a>(&'a self, vertex: &VId) -> impl Iterator<Item = &'a Vertex>
+    where
+        Vertex: 'a,
+    {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex),
         }
     }
 
-    fn get_adjacent_vertices_with_edges(&self, vertex: &VId) -> Vec<(&Vertex, &Edge)> {
+    fn get_adjacent_vertices_with_edges<'a>(
+        &'a self,
+        vertex: &VId,
+    ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
+    where
+        Vertex: 'a,
+        Edge: 'a,
+    {
         match self {
             Backend::AdjacencyList(graph) => graph.get_adjacent_vertices_with_edges(vertex),
         }
     }
 
-    fn get_all_edges(&self) -> Vec<(&VId, &VId, &Edge)> {
+    fn get_all_edges<'a>(&'a self) -> Box<dyn Iterator<Item = (&'a VId, &'a VId, &'a Edge)> + 'a>
+    where
+        VId: 'a,
+        Edge: 'a,
+    {
         match self {
             Backend::AdjacencyList(graph) => graph.get_all_edges(),
         }
