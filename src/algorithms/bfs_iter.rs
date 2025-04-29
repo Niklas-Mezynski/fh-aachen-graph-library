@@ -26,7 +26,7 @@ where
         start_vertex: VId,
     ) -> Result<Self, GraphError<VId>> {
         graph
-            .get_vertex_by_id(&start_vertex)
+            .get_vertex_by_id(start_vertex)
             .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
 
         let queue = VecDeque::from([start_vertex]);
@@ -53,7 +53,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
             // Add unvisited neighbors to queue
-            let neighbors = self.graph.get_adjacent_vertices(&next_id);
+            let neighbors = self.graph.get_adjacent_vertices(next_id);
 
             for v in neighbors {
                 let vid = v.get_id();
@@ -64,7 +64,7 @@ where
             }
 
             // Return the current vertex
-            Some(self.graph.get_vertex_by_id(&next_id).expect(
+            Some(self.graph.get_vertex_by_id(next_id).expect(
                 "get_vertex_by_id should not error as the vertices in the queue must exist",
             ))
         } else {
@@ -95,7 +95,7 @@ where
         start_vertex: VId,
     ) -> Result<Self, GraphError<VId>> {
         graph
-            .get_vertex_by_id(&start_vertex)
+            .get_vertex_by_id(start_vertex)
             .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
 
         let queue = VecDeque::from([start_vertex]);
@@ -122,7 +122,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
             // Add unvisited neighbors to queue
-            let neighbors = self.graph.get_adjacent_vertices(&next_id);
+            let neighbors = self.graph.get_adjacent_vertices(next_id);
 
             for v in neighbors {
                 let vid = v.get_id();
@@ -139,7 +139,7 @@ where
             // 2. Each vertex is visited exactly once (tracked by the visited set)
             // 3. The reference doesn't outlive the graph (tied to lifetime 'a)
             unsafe {
-                let vertex_ptr = self.graph.get_vertex_by_id_mut(&next_id).expect(
+                let vertex_ptr = self.graph.get_vertex_by_id_mut(next_id).expect(
                     "get_vertex_by_id_mut should not error as the vertices in the queue must exist",
                 ) as *mut Vertex;
 
@@ -299,12 +299,12 @@ mod tests {
         }
 
         // Verify all vertices were modified
-        assert_eq!(graph.get_vertex_by_id(&0).unwrap().value, "Modified_A");
-        assert_eq!(graph.get_vertex_by_id(&1).unwrap().value, "Modified_B");
-        assert_eq!(graph.get_vertex_by_id(&2).unwrap().value, "Modified_C");
-        assert_eq!(graph.get_vertex_by_id(&3).unwrap().value, "Modified_D");
-        assert_eq!(graph.get_vertex_by_id(&4).unwrap().value, "Modified_E");
-        assert_eq!(graph.get_vertex_by_id(&5).unwrap().value, "Modified_F");
+        assert_eq!(graph.get_vertex_by_id(0).unwrap().value, "Modified_A");
+        assert_eq!(graph.get_vertex_by_id(1).unwrap().value, "Modified_B");
+        assert_eq!(graph.get_vertex_by_id(2).unwrap().value, "Modified_C");
+        assert_eq!(graph.get_vertex_by_id(3).unwrap().value, "Modified_D");
+        assert_eq!(graph.get_vertex_by_id(4).unwrap().value, "Modified_E");
+        assert_eq!(graph.get_vertex_by_id(5).unwrap().value, "Modified_F");
     }
 
     #[rstest]

@@ -48,10 +48,10 @@ where
         // Pop each edge in edges (lowest first):
         while let Some((from, to, _weight, edge)) = edges.pop() {
             //  if adding e to MST would not create a circle:
-            let was_merged = union_find.union(from, to)?;
+            let was_merged = union_find.union(&from, &to)?;
 
             if was_merged {
-                mst_graph.push_edge(*from, *to, edge.to_owned())?;
+                mst_graph.push_edge(from, to, edge.to_owned())?;
                 edge_count += 1;
             }
 

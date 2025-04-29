@@ -32,7 +32,7 @@ where
         let (mut remaining_vertices, v0) = match start_vertex_id {
             Some(start_vertex_id) => {
                 let v0 = self
-                    .get_vertex_by_id(&start_vertex_id)
+                    .get_vertex_by_id(start_vertex_id)
                     .ok_or_else(|| GraphError::VertexNotFound(start_vertex_id))?;
 
                 let mut remaining_vertices = self
@@ -63,7 +63,7 @@ where
         mst_graph.push_vertex(v0.clone())?;
 
         // Add initial edges from the start vertex to the priority queue
-        for (neighbor_vertex, edge) in self.get_adjacent_vertices_with_edges(&start_id) {
+        for (neighbor_vertex, edge) in self.get_adjacent_vertices_with_edges(start_id) {
             let weight = edge.get_weight();
             edge_pq.push(EdgeEntry::new(
                 // Reverse is used to make BinaryHeap behave as a min-heap based on weight
@@ -89,15 +89,14 @@ where
 
             // Step (b): Add the edge and the now reachable vertex to the new mst graph
             mst_graph.push_vertex(
-                self.get_vertex_by_id(&cheapest.to)
+                self.get_vertex_by_id(cheapest.to)
                     .expect("vertex must exist")
                     .to_owned(),
             )?;
             mst_graph.push_edge(cheapest.from, cheapest.to, cheapest.edge.to_owned())?;
 
             // Also add the now reachable edges to the priority queue
-            for (neighbor_vertex, next_edge) in self.get_adjacent_vertices_with_edges(&cheapest.to)
-            {
+            for (neighbor_vertex, next_edge) in self.get_adjacent_vertices_with_edges(cheapest.to) {
                 let neighbor_id = neighbor_vertex.get_id();
                 // Skip if we already added that vertex
                 if !remaining_vertices.contains(&neighbor_id) {

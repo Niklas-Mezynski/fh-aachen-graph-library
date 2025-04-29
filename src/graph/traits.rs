@@ -20,10 +20,10 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     // Graph queries
 
     /// Get vertex data by vertex id.
-    fn get_vertex_by_id(&self, vertex_id: &VId) -> Option<&Vertex>;
+    fn get_vertex_by_id(&self, vertex_id: VId) -> Option<&Vertex>;
 
     /// Get a mutable reference to vertex data by vertex id.
-    fn get_vertex_by_id_mut(&mut self, id: &VId) -> Option<&mut Vertex>;
+    fn get_vertex_by_id_mut(&mut self, vertex_id: VId) -> Option<&mut Vertex>;
 
     /// Get all vertices in the graph.
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
@@ -31,20 +31,19 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
         Vertex: 'a;
 
     /// Get all edges in the graph as an iterator.
-    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (&'a VId, &'a VId, &'a Edge)>
+    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (VId, VId, &'a Edge)>
     where
-        VId: 'a,
         Edge: 'a;
 
     /// Get all direct neighbors as an iterator.
-    fn get_adjacent_vertices<'a, 'b>(&'a self, vertex: &'b VId) -> impl Iterator<Item = &'a Vertex>
+    fn get_adjacent_vertices<'a>(&'a self, vertex_id: VId) -> impl Iterator<Item = &'a Vertex>
     where
         Vertex: 'a;
 
     /// Get all direct neighbors including the edge data as an iterator.
     fn get_adjacent_vertices_with_edges<'a>(
         &'a self,
-        vertex: &VId,
+        vertex_id: VId,
     ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
     where
         Vertex: 'a,

@@ -26,7 +26,7 @@ where
         start_vertex: VId,
     ) -> Result<Self, GraphError<VId>> {
         graph
-            .get_vertex_by_id(&start_vertex)
+            .get_vertex_by_id(start_vertex)
             .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
 
         let stack = vec![start_vertex];
@@ -53,12 +53,12 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.stack.pop() {
             // Get the current vertex first
-            let current_vertex = self.graph.get_vertex_by_id(&next_id).expect(
+            let current_vertex = self.graph.get_vertex_by_id(next_id).expect(
                 "get_vertex_by_id should not error as the vertices in the stack must exist",
             );
 
             // Add unvisited neighbors to stack (back) for depth-first traversal
-            let neighbors = self.graph.get_adjacent_vertices(&next_id);
+            let neighbors = self.graph.get_adjacent_vertices(next_id);
 
             // In DFS, we want to explore the most recently added vertices first
             for v in neighbors {
