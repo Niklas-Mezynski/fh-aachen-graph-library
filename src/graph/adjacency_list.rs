@@ -5,7 +5,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap};
 use super::{
     error::GraphError,
     traits::{GraphInterface, WithID},
-    WeightedEdge, WeightedGraphInterface,
+    WeightedEdge,
 };
 
 #[derive(Debug)]
@@ -76,9 +76,9 @@ impl<VId, Vertex: WithID<VId>, Edge> AdjacencyListGraph<VId, Vertex, Edge> {
 
 impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for AdjacencyListGraph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    VId: Eq + Hash + PartialOrd + Copy + Debug,
+    Vertex: WithID<VId> + Debug,
+    Edge: Clone + Debug,
 {
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
         let vid = vertex.get_id();
@@ -112,55 +112,62 @@ where
         self.vertices.get_mut(&vertex_id)
     }
 
-    fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
+    fn get_all_vertices<'a>(&'a self) -> Box<(dyn Iterator<Item = &'a Vertex> + 'a)>
     where
         Vertex: 'a,
     {
-        self.vertices.values()
+        Box::new(self.vertices.values())
     }
 
-    fn get_adjacent_vertices<'a>(&'a self, vertex_id: VId) -> impl Iterator<Item = &'a Vertex>
+    fn get_adjacent_vertices<'a>(
+        &'a self,
+        vertex_id: VId,
+    ) -> Box<(dyn Iterator<Item = &'a Vertex> + 'a)>
     where
         Vertex: 'a,
     {
-        self.adjacency
-            .get(&vertex_id)
-            .map(|edges| {
-                edges.iter().map(|(to_id, _)| {
-                    self.vertices
-                        .get(to_id)
-                        .expect("All edges must connect to existing vertices")
+        Box::new(
+            self.adjacency
+                .get(&vertex_id)
+                .map(|edges| {
+                    edges.iter().map(|(to_id, _)| {
+                        self.vertices
+                            .get(to_id)
+                            .expect("All edges must connect to existing vertices")
+                    })
                 })
-            })
-            .into_iter()
-            .flatten()
+                .into_iter()
+                .flatten(),
+        )
     }
 
     fn get_adjacent_vertices_with_edges<'a>(
         &'a self,
         vertex_id: VId,
-    ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
+    ) -> Box<(dyn Iterator<Item = (&'a Vertex, &'a Edge)> + 'a)>
     where
         Vertex: 'a,
         Edge: 'a,
     {
-        self.adjacency
-            .get(&vertex_id)
-            .map(|edges| {
-                edges.iter().map(|(to_id, edge)| {
-                    (
-                        self.vertices
-                            .get(to_id)
-                            .expect("All edges must connect to existing vertices"),
-                        edge,
-                    )
+        Box::new(
+            self.adjacency
+                .get(&vertex_id)
+                .map(|edges| {
+                    edges.iter().map(|(to_id, edge)| {
+                        (
+                            self.vertices
+                                .get(to_id)
+                                .expect("All edges must connect to existing vertices"),
+                            edge,
+                        )
+                    })
                 })
-            })
-            .into_iter()
-            .flatten()
+                .into_iter()
+                .flatten(),
+        )
     }
 
-    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (VId, VId, &'a Edge)>
+    fn get_all_edges<'a>(&'a self) -> Box<(dyn Iterator<Item = (VId, VId, &'a Edge)> + 'a)>
     where
         Edge: 'a,
     {
@@ -196,16 +203,11 @@ where
             edge_count / 2
         }
     }
-}
 
-impl<VId, Vertex, Edge> WeightedGraphInterface<VId, Vertex, Edge>
-    for AdjacencyListGraph<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + Copy,
-    Vertex: WithID<VId>,
-    Edge: WeightedEdge + Clone,
-{
-    fn get_total_weight(&self) -> Edge::WeightType {
+    fn get_total_weight(&self) -> <Edge>::WeightType
+    where
+        Edge: WeightedEdge,
+    {
         let sum = self
             .adjacency
             .values()

@@ -9,9 +9,9 @@ use crate::{
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Debug + Copy,
-    Vertex: WithID<VId> + Clone,
-    Edge: WeightedEdge + Clone,
+    VId: 'static + Eq + Hash + PartialOrd + Debug + Copy + Debug,
+    Vertex: 'static + WithID<VId> + Clone + Debug,
+    Edge: 'static + WeightedEdge + Clone + Debug,
 {
     /// Creates an MST using the Prim algorithm.
     ///

@@ -8,71 +8,26 @@ use super::error::GraphError;
 use super::error::ParsingError;
 use super::traits::GraphInterface;
 use super::traits::WithID;
-use super::{Vertex, VertexIDType, WeightedEdge, WeightedGraphInterface};
-
-#[derive(Debug)]
-pub enum GraphBackend {
-    AdjacencyList,
-}
-
-#[derive(Debug)]
-enum Backend<VId, Vertex: WithID<VId>, Edge> {
-    AdjacencyList(AdjacencyListGraph<VId, Vertex, Edge>),
-}
+use super::{Vertex, VertexIDType, WeightedEdge};
 
 #[derive(Debug)]
 pub struct Graph<VId = VertexIDType, VertexT = Vertex, Edge = ()>
 where
-    VId: Eq + Hash + Copy,
     VertexT: WithID<VId>,
-    Edge:,
 {
-    backend: Backend<VId, VertexT, Edge>,
+    backend: Box<dyn GraphInterface<VId, VertexT, Edge>>,
 }
 
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    VId: 'static + Eq + Hash + PartialOrd + Copy + Debug,
+    Vertex: 'static + WithID<VId> + Debug,
+    Edge: 'static + Clone + Debug,
 {
     /// Creates a new empty graph with a default backend
     pub fn new(is_directed: bool) -> Self {
         Graph {
-            backend: Backend::AdjacencyList(AdjacencyListGraph::new(is_directed)),
-        }
-    }
-
-    /// Creates a new empty graph with a given Backend
-    pub fn new_with_backend(backend_type: GraphBackend, is_directed: bool) -> Self {
-        Graph {
-            backend: match backend_type {
-                GraphBackend::AdjacencyList => {
-                    Backend::AdjacencyList(AdjacencyListGraph::new(is_directed))
-                }
-            },
-        }
-    }
-
-    /// Create a new Graph and tries to preallocate data structures based on the number of vertices/edges
-    ///
-    /// # Arguments
-    /// * `backend_type`: Which data representation backend to use
-    /// * `vertex_count`: The expected number of vertices in the graph. This is used to pre-allocate memory for the vertices.
-    /// * `edge_count`: The expected number of edges in the graph. This is used to pre-allocate memory for the edges.
-    /// * `is_directed`: Boolean in indicating wether the graph is directed or not
-    fn new_with_size(
-        backend_type: GraphBackend,
-        vertex_count: Option<usize>,
-        edge_count: Option<usize>,
-        is_directed: bool,
-    ) -> Self {
-        Graph {
-            backend: match backend_type {
-                GraphBackend::AdjacencyList => Backend::AdjacencyList(
-                    AdjacencyListGraph::new_with_size(vertex_count, edge_count, is_directed),
-                ),
-            },
+            backend: Box::new(AdjacencyListGraph::new(is_directed)),
         }
     }
 
@@ -85,8 +40,7 @@ where
         edges: Vec<(VId, VId, Edge)>,
         directed: bool,
     ) -> Result<Self, GraphError<VId>> {
-        let mut graph = Graph::<VId, Vertex, Edge>::new_with_size(
-            GraphBackend::AdjacencyList,
+        let mut graph = AdjacencyListGraph::<VId, Vertex, Edge>::new_with_size(
             Some(n_vertices as usize),
             Some(edges.len()),
             directed,
@@ -94,19 +48,21 @@ where
 
         vertices
             .into_iter()
-            .try_for_each(|v| graph.backend.push_vertex(v))?;
+            .try_for_each(|v| graph.push_vertex(v))?;
 
         edges
             .into_iter()
-            .try_for_each(|(from, to, edge)| graph.backend.push_edge(from, to, edge))?;
+            .try_for_each(|(from, to, edge)| graph.push_edge(from, to, edge))?;
 
-        Ok(graph)
+        Ok(Graph {
+            backend: Box::new(graph),
+        })
     }
 }
 
 impl<Edge> Graph<VertexIDType, Vertex, Edge>
 where
-    Edge: Clone,
+    Edge: 'static + Clone + Debug,
 {
     /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
     ///
@@ -310,97 +266,6 @@ where
     }
 }
 
-// Implement the graph backend
-impl<VId, Vertex, Edge> GraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
-{
-    fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.push_vertex(vertex),
-        }
-    }
-
-    fn push_edge(&mut self, from: VId, to: VId, edge: Edge) -> Result<(), GraphError<VId>> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.push_edge(from, to, edge),
-        }
-    }
-
-    fn is_directed(&self) -> bool {
-        match self {
-            Backend::AdjacencyList(graph) => graph.is_directed(),
-        }
-    }
-
-    fn get_vertex_by_id(&self, vertex_id: VId) -> Option<&Vertex> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_vertex_by_id(vertex_id),
-        }
-    }
-
-    fn get_vertex_by_id_mut(&mut self, vertex_id: VId) -> Option<&mut Vertex> {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_vertex_by_id_mut(vertex_id),
-        }
-    }
-
-    fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
-    where
-        Vertex: 'a,
-    {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_all_vertices(),
-        }
-    }
-
-    fn get_adjacent_vertices<'a>(&'a self, vertex_id: VId) -> impl Iterator<Item = &'a Vertex>
-    where
-        Vertex: 'a,
-    {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_adjacent_vertices(vertex_id),
-        }
-    }
-
-    fn get_adjacent_vertices_with_edges<'a>(
-        &'a self,
-        vertex_id: VId,
-    ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
-    where
-        Vertex: 'a,
-        Edge: 'a,
-    {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_adjacent_vertices_with_edges(vertex_id),
-        }
-    }
-
-    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (VId, VId, &'a Edge)>
-    where
-        VId: 'a,
-        Edge: 'a,
-    {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_all_edges(),
-        }
-    }
-
-    fn vertex_count(&self) -> usize {
-        match self {
-            Backend::AdjacencyList(graph) => graph.vertex_count(),
-        }
-    }
-
-    fn edge_count(&self) -> usize {
-        match self {
-            Backend::AdjacencyList(graph) => graph.edge_count(),
-        }
-    }
-}
-
 impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
 where
     VId: Eq + Hash + Copy,
@@ -412,18 +277,5 @@ where
     /// See [`WeightedGraphInterface::get_total_weight`] for details
     pub fn get_total_weight(&self) -> <Edge as WeightedEdge>::WeightType {
         self.backend.get_total_weight()
-    }
-}
-
-impl<VId, Vertex, Edge> WeightedGraphInterface<VId, Vertex, Edge> for Backend<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + Copy,
-    Vertex: WithID<VId>,
-    Edge: WeightedEdge + Clone,
-{
-    fn get_total_weight(&self) -> <Edge as WeightedEdge>::WeightType {
-        match self {
-            Backend::AdjacencyList(graph) => graph.get_total_weight(),
-        }
     }
 }

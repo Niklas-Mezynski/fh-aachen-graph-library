@@ -1,4 +1,4 @@
-use std::{iter::Sum, ops::Div};
+use std::{fmt::Debug, iter::Sum, ops::Div};
 
 use super::error::GraphError;
 
@@ -6,7 +6,7 @@ pub trait WithID<IDType> {
     fn get_id(&self) -> IDType;
 }
 
-pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
+pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge>: Debug {
     // --- Basic Graph operations ---
     /// Adds a new vertex to the graph.
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<VId>>;
@@ -26,17 +26,20 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     fn get_vertex_by_id_mut(&mut self, vertex_id: VId) -> Option<&mut Vertex>;
 
     /// Get all vertices in the graph.
-    fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
+    fn get_all_vertices<'a>(&'a self) -> Box<dyn Iterator<Item = &'a Vertex> + 'a>
     where
         Vertex: 'a;
 
     /// Get all edges in the graph as an iterator.
-    fn get_all_edges<'a>(&'a self) -> impl Iterator<Item = (VId, VId, &'a Edge)>
+    fn get_all_edges<'a>(&'a self) -> Box<dyn Iterator<Item = (VId, VId, &'a Edge)> + 'a>
     where
         Edge: 'a;
 
     /// Get all direct neighbors as an iterator.
-    fn get_adjacent_vertices<'a>(&'a self, vertex_id: VId) -> impl Iterator<Item = &'a Vertex>
+    fn get_adjacent_vertices<'a>(
+        &'a self,
+        vertex_id: VId,
+    ) -> Box<dyn Iterator<Item = &'a Vertex> + 'a>
     where
         Vertex: 'a;
 
@@ -44,7 +47,7 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
     fn get_adjacent_vertices_with_edges<'a>(
         &'a self,
         vertex_id: VId,
-    ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
+    ) -> Box<dyn Iterator<Item = (&'a Vertex, &'a Edge)> + 'a>
     where
         Vertex: 'a,
         Edge: 'a;
@@ -54,18 +57,15 @@ pub trait GraphInterface<VId, Vertex: WithID<VId>, Edge> {
 
     /// Returns the number of edges in the graph.
     fn edge_count(&self) -> usize;
+
+    /// Gets the sum of all edges' weights
+    fn get_total_weight(&self) -> Edge::WeightType
+    where
+        Edge: WeightedEdge;
 }
 
 pub trait WeightedEdge {
     type WeightType: Sum + Div<Output = Self::WeightType> + From<u8> + PartialOrd;
 
     fn get_weight(&self) -> Self::WeightType;
-}
-
-pub trait WeightedGraphInterface<VId, Vertex: WithID<VId>, Edge>
-where
-    Edge: WeightedEdge,
-{
-    /// Gets the sum of all edges' weights
-    fn get_total_weight(&self) -> Edge::WeightType;
 }
