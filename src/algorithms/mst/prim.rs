@@ -7,6 +7,9 @@ use crate::{
     Graph, GraphError,
 };
 
+type MSTResult<Vertex, Edge, Dir, OutputBackend> =
+    Result<Graph<Vertex, Edge, Dir, OutputBackend>, GraphError<<Vertex as WithID>::IDType>>;
+
 impl<Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
 where
     Backend: GraphBase<Vertex, Edge, Dir>,
@@ -17,7 +20,7 @@ where
     pub fn mst_prim<OutputBackend>(
         &self,
         start_vertex_id: Option<Vertex::IDType>,
-    ) -> Result<Graph<Vertex, Edge, Backend::Direction, OutputBackend>, GraphError<Vertex::IDType>>
+    ) -> MSTResult<Vertex, Edge, Backend::Direction, OutputBackend>
     where
         OutputBackend: GraphBase<Vertex, Edge, Backend::Direction>,
     {

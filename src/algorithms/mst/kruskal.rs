@@ -10,6 +10,9 @@ use crate::{
 
 use super::union_find::UnionFind;
 
+type MSTResult<Vertex, Edge, Dir, OutputBackend> =
+    Result<Graph<Vertex, Edge, Dir, OutputBackend>, GraphError<<Vertex as WithID>::IDType>>;
+
 impl<Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
 where
     Backend: GraphBase<Vertex, Edge, Dir>,
@@ -22,7 +25,7 @@ where
     /// Returns the MST as a new graph
     pub fn mst_kruskal<OutputBackend>(
         &self,
-    ) -> Result<Graph<Vertex, Edge, Backend::Direction, OutputBackend>, GraphError<Vertex::IDType>>
+    ) -> MSTResult<Vertex, Edge, Backend::Direction, OutputBackend>
     where
         OutputBackend: GraphBase<Vertex, Edge, Backend::Direction>,
     {
