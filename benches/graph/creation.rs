@@ -1,5 +1,5 @@
 use criterion::{BenchmarkId, Criterion};
-use graph_library::Graph;
+use graph_library::{ListGraph, Undirected};
 
 pub fn graph_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("Graph Creation");
@@ -15,7 +15,7 @@ pub fn graph_creation(c: &mut Criterion) {
 
     for file in files {
         group.bench_with_input(BenchmarkId::new("from_file", file), &file, |b, &file| {
-            b.iter(|| Graph::from_hoever_file(file, false).unwrap());
+            b.iter(|| ListGraph::<_, _, Undirected>::from_hoever_file(file).unwrap());
         });
     }
 

@@ -155,12 +155,14 @@ where
     }
 }
 
-impl<Vertex, Edge> GraphBase<Vertex, Edge> for AdjacencyListGraph<Vertex, Edge, Directed>
+impl<Vertex, Edge> GraphBase<Vertex, Edge, Directed> for AdjacencyListGraph<Vertex, Edge, Directed>
 where
     Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID + Debug,
     Edge: Clone + Debug,
 {
+    type Direction = Directed;
+
     fn new() -> Self
     where
         Self: Sized,
@@ -182,7 +184,14 @@ where
     where
         Self: Sized,
     {
-        todo!()
+        let mut graph = Self::new_with_size(vertices.len());
+        for vertex in vertices {
+            graph.push_vertex(vertex)?;
+        }
+        for (from, to, edge) in edges {
+            graph.push_edge(from, to, edge)?;
+        }
+        Ok(graph)
     }
 
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<Vertex::IDType>> {
@@ -280,12 +289,15 @@ where
     }
 }
 
-impl<Vertex, Edge> GraphBase<Vertex, Edge> for AdjacencyListGraph<Vertex, Edge, Undirected>
+impl<Vertex, Edge> GraphBase<Vertex, Edge, Undirected>
+    for AdjacencyListGraph<Vertex, Edge, Undirected>
 where
     Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID + Debug,
     Edge: Clone + Debug,
 {
+    type Direction = Undirected;
+
     fn new() -> Self
     where
         Self: Sized,
@@ -307,7 +319,14 @@ where
     where
         Self: Sized,
     {
-        todo!()
+        let mut graph = Self::new_with_size(vertices.len());
+        for vertex in vertices {
+            graph.push_vertex(vertex)?;
+        }
+        for (from, to, edge) in edges {
+            graph.push_edge(from, to, edge)?;
+        }
+        Ok(graph)
     }
 
     fn push_vertex(&mut self, vertex: Vertex) -> Result<(), GraphError<Vertex::IDType>> {

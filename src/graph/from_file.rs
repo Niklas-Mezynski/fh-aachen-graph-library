@@ -1,22 +1,24 @@
-use std::fs;
+use std::{fmt::Debug, fs};
 
 use crate::{graph::traits::GraphBase, GraphError};
 
 use super::{error::ParsingError, Graph, Vertex, VertexIDType};
 
-impl<Backend> Graph<Backend> {
+impl<Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Vertex: Debug,
+    Edge: Debug,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+{
     /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
     ///
     /// Format:
     /// - Erste Zeile: Knotenanzahl
     /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
-    pub fn from_hoever_file_with_weights<Edge>(
+    pub fn from_hoever_file_with_weights(
         path: &str,
         edge_builder: fn(remaining: Vec<&str>) -> Edge,
-    ) -> Result<Self, GraphError<VertexIDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-    {
+    ) -> Result<Self, GraphError<VertexIDType>> {
         // Open the file in read-only mode.
         let file_contents = fs::read_to_string(path).map_err(GraphError::IoError)?;
         let mut line_iter = file_contents.lines();
@@ -89,7 +91,13 @@ impl<Backend> Graph<Backend> {
 
         Self::from_vertices_and_edges(vertices, edges)
     }
+}
 
+impl<Dir, Backend> Graph<Vertex, (), Dir, Backend>
+where
+    Vertex: Debug,
+    Backend: GraphBase<Vertex, (), Dir>,
+{
     /// Creates a new graph from a file provided by Prof. Hoever for testing the algorithms.
     ///
     /// Format:
@@ -97,7 +105,7 @@ impl<Backend> Graph<Backend> {
     /// - Folgende Zeilen: Kanten (i->j, Nummerierung: 0 ... Knotenanzahl-1)
     pub fn from_hoever_file(path: &str) -> Result<Self, GraphError<VertexIDType>>
     where
-        Backend: GraphBase<Vertex, ()>,
+        Backend: GraphBase<Vertex, (), Dir>,
     {
         Self::from_hoever_file_with_weights(path, |_| ())
     }

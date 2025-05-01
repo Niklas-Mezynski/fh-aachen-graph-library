@@ -6,7 +6,7 @@ use crate::{
     graph::{GraphBase, WithID},
     Graph, GraphError,
 };
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
 /// Specifies which graph traversal algorithm to use
@@ -29,20 +29,21 @@ impl Display for TraversalType {
 }
 
 /// A wrapper enum around different graph iterator implementations
-pub enum GraphIter<'a, Backend, Vertex: 'a, Edge>
+pub enum GraphIter<'a, Vertex: 'a, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
+    Backend: GraphBase<Vertex, Edge, Dir>,
     Vertex: WithID,
 {
-    BFS(BfsIter<'a, Backend, Vertex, Edge>),
-    DFS(DfsIter<'a, Backend, Vertex, Edge>),
+    BFS(BfsIter<'a, Vertex, Edge, Dir, Backend>),
+    DFS(DfsIter<'a, Vertex, Edge, Dir, Backend>),
 }
 
-impl<'a, Backend, Vertex, Edge> Iterator for GraphIter<'a, Backend, Vertex, Edge>
+impl<'a, Vertex, Edge, Dir, Backend> Iterator for GraphIter<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: 'a + WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     type Item = &'a Vertex;
 
@@ -54,19 +55,20 @@ where
     }
 }
 
-impl<Backend> Graph<Backend> {
+impl<'a, Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
+    Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
+{
     /// Creates an iterator that traverses the graph starting from the given vertex
     /// using the specified traversal algorithm.
-    pub fn iter<'a, Vertex, Edge>(
+    pub fn iter(
         &'a self,
         start_vertex: Vertex::IDType,
         iter_type: TraversalType,
-    ) -> Result<GraphIter<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-        Vertex: 'a + WithID,
-        Vertex::IDType: Eq + Hash + Copy,
-    {
+    ) -> Result<GraphIter<'a, Vertex, Edge, Dir, Backend>, GraphError<Vertex::IDType>> {
         match iter_type {
             TraversalType::BFS => Ok(GraphIter::BFS(self.bfs_iter(start_vertex)?)),
             TraversalType::DFS => Ok(GraphIter::DFS(self.dfs_iter(start_vertex)?)),
@@ -75,19 +77,20 @@ impl<Backend> Graph<Backend> {
 }
 
 /// A wrapper enum around different graph iterator implementations
-pub enum GraphIterMut<'a, Backend, Vertex: 'a, Edge>
+pub enum GraphIterMut<'a, Vertex: 'a, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
+    Backend: GraphBase<Vertex, Edge, Dir>,
     Vertex: WithID,
 {
-    BFS(BfsIterMut<'a, Backend, Vertex, Edge>),
+    BFS(BfsIterMut<'a, Vertex, Edge, Dir, Backend>),
 }
 
-impl<'a, Backend, Vertex, Edge> Iterator for GraphIterMut<'a, Backend, Vertex, Edge>
+impl<'a, Vertex, Edge, Dir, Backend> Iterator for GraphIterMut<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: 'a + WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     type Item = &'a mut Vertex;
 
@@ -98,19 +101,20 @@ where
     }
 }
 
-impl<Backend> Graph<Backend> {
+impl<'a, Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
+    Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
+{
     /// Creates an iterator that traverses the graph starting from the given vertex
     /// using the specified traversal algorithm.
-    pub fn iter_mut<'a, Vertex, Edge>(
+    pub fn iter_mut(
         &'a mut self,
         start_vertex: Vertex::IDType,
         iter_type: TraversalType,
-    ) -> Result<GraphIterMut<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-        Vertex: 'a + WithID,
-        Vertex::IDType: Eq + Hash + Copy,
-    {
+    ) -> Result<GraphIterMut<'a, Vertex, Edge, Dir, Backend>, GraphError<Vertex::IDType>> {
         match iter_type {
             TraversalType::BFS => Ok(GraphIterMut::BFS(self.bfs_iter_mut(start_vertex)?)),
             TraversalType::DFS => todo!(),

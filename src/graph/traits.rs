@@ -1,4 +1,4 @@
-use std::{fmt::Debug, iter::Sum, ops::Div};
+use std::{iter::Sum, ops::Div};
 
 use super::error::GraphError;
 
@@ -14,7 +14,9 @@ pub trait WeightedEdge {
     fn get_weight(&self) -> Self::WeightType;
 }
 
-pub trait GraphBase<Vertex: WithID, Edge>: Debug + Default {
+pub trait GraphBase<Vertex: WithID, Edge, Dir>: Default {
+    type Direction;
+
     // --- Construction operations ---
     /// Creates a new empty graph of the same backend type.
     fn new() -> Self

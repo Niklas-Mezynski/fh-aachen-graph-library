@@ -8,23 +8,20 @@ use crate::{
     Graph, GraphError,
 };
 
-impl<Backend> Graph<Backend> {
-    // where
-    //     VId: Eq + Hash + PartialOrd + Debug + Copy,
-    //     Vertex: WithID<VId>,
-    //     Edge: Clone,
+impl<Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: WithID + Clone + Debug,
+    Vertex::IDType: Copy + Eq + Hash,
+    Edge: Debug,
+{
     /// Counts the number of connected subgraphs in the graph.
     ///
     /// Optionally accepts an iterator type to specify which traversal algorithm to use.
-    pub fn count_connected_subgraphs<Vertex, Edge>(
+    pub fn count_connected_subgraphs(
         &self,
         traversal_type: Option<TraversalType>,
-    ) -> Result<u32, GraphError<Vertex::IDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-        Vertex: WithID + Clone,
-        Vertex::IDType: Copy + Eq + Hash,
-    {
+    ) -> Result<u32, GraphError<Vertex::IDType>> {
         let iter_type = traversal_type.unwrap_or_default(); // Default to BFS
         let mut vertices = self.get_all_vertices().collect::<VecDeque<_>>();
         let mut visited: FxHashSet<Vertex::IDType> = FxHashSet::default();
@@ -58,14 +55,9 @@ impl<Backend> Graph<Backend> {
     }
 
     /// Method that uses BFS by default
-    pub fn count_connected_subgraphs_with_default_traversal<Vertex, Edge>(
+    pub fn count_connected_subgraphs_with_default_traversal(
         &self,
-    ) -> Result<u32, GraphError<Vertex::IDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-        Vertex: WithID + Clone,
-        Vertex::IDType: Copy + Eq + Hash,
-    {
+    ) -> Result<u32, GraphError<Vertex::IDType>> {
         self.count_connected_subgraphs(None)
     }
 }

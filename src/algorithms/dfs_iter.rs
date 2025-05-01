@@ -1,4 +1,4 @@
-use std::{hash::Hash, marker::PhantomData, vec};
+use std::{fmt::Debug, hash::Hash, marker::PhantomData, vec};
 
 use rustc_hash::FxHashSet;
 
@@ -7,25 +7,26 @@ use crate::{
     Graph, GraphError,
 };
 
-pub struct DfsIter<'a, Backend, Vertex: 'a, Edge>
+pub struct DfsIter<'a, Vertex: 'a, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
+    Backend: GraphBase<Vertex, Edge, Dir>,
     Vertex: WithID,
 {
-    graph: &'a Graph<Backend>,
+    graph: &'a Graph<Vertex, Edge, Dir, Backend>,
     stack: Vec<Vertex::IDType>,
     visited: FxHashSet<Vertex::IDType>,
     _phantom: PhantomData<&'a Edge>,
 }
 
-impl<'a, Backend, Vertex: 'a, Edge> DfsIter<'a, Backend, Vertex, Edge>
+impl<'a, Vertex: 'a, Edge, Dir, Backend> DfsIter<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     fn new(
-        graph: &'a Graph<Backend>,
+        graph: &'a Graph<Vertex, Edge, Dir, Backend>,
         start_vertex: Vertex::IDType,
     ) -> Result<Self, GraphError<Vertex::IDType>> {
         graph
@@ -46,11 +47,12 @@ where
     }
 }
 
-impl<'a, Backend, Vertex, Edge> Iterator for DfsIter<'a, Backend, Vertex, Edge>
+impl<'a, Vertex, Edge, Dir, Backend> Iterator for DfsIter<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: 'a + WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     type Item = &'a Vertex;
 
@@ -77,16 +79,17 @@ where
     }
 }
 
-impl<Backend> Graph<Backend> {
-    pub fn dfs_iter<'a, Vertex, Edge>(
+impl<'a, Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
+    Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
+{
+    pub fn dfs_iter(
         &'a self,
         start_vertex: Vertex::IDType,
-    ) -> Result<DfsIter<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-        Vertex: 'a + WithID,
-        Vertex::IDType: Eq + Hash + Copy,
-    {
+    ) -> Result<DfsIter<'a, Vertex, Edge, Dir, Backend>, GraphError<Vertex::IDType>> {
         DfsIter::new(self, start_vertex)
     }
 }

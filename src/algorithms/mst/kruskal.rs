@@ -10,21 +10,23 @@ use crate::{
 
 use super::union_find::UnionFind;
 
-impl<Backend> Graph<Backend> {
+impl<Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: WithID + Clone + Debug,
+    Vertex::IDType: Copy + Eq + Hash + Display + Debug + 'static,
+    Edge: WeightedEdge + Clone + Debug,
+{
     /// Creates an MST using the Kruskal's algorithm.
     ///
     /// Returns the MST as a new graph
-    pub fn mst_kruskal<Vertex, Edge, OutputBackend>(
+    pub fn mst_kruskal<OutputBackend>(
         &self,
-    ) -> Result<Graph<OutputBackend>, GraphError<Vertex::IDType>>
+    ) -> Result<Graph<Vertex, Edge, Backend::Direction, OutputBackend>, GraphError<Vertex::IDType>>
     where
-        Backend: GraphBase<Vertex, Edge>,
-        OutputBackend: GraphBase<Vertex, Edge>,
-        Vertex: WithID + Clone,
-        Vertex::IDType: Copy + Eq + Hash + Display + Debug + 'static,
-        Edge: WeightedEdge + Clone,
+        OutputBackend: GraphBase<Vertex, Edge, Backend::Direction>,
     {
-        let mut mst_graph = Graph::<OutputBackend>::new();
+        let mut mst_graph = Graph::<Vertex, Edge, Backend::Direction, OutputBackend>::new();
 
         // Get all edges and sort them
         let mut edges = self

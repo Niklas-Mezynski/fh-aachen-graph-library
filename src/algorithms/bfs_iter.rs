@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, hash::Hash, marker::PhantomData};
+use std::{collections::VecDeque, fmt::Debug, hash::Hash, marker::PhantomData};
 
 use rustc_hash::FxHashSet;
 
@@ -7,25 +7,25 @@ use crate::{
     Graph, GraphError,
 };
 
-pub struct BfsIter<'a, Backend, Vertex: 'a, Edge>
+pub struct BfsIter<'a, Vertex: 'a, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
+    Backend: GraphBase<Vertex, Edge, Dir>,
     Vertex: WithID,
 {
-    graph: &'a Graph<Backend>,
+    graph: &'a Graph<Vertex, Edge, Dir, Backend>,
     queue: VecDeque<Vertex::IDType>,
     visited: FxHashSet<Vertex::IDType>,
-    _phantom: PhantomData<&'a Edge>,
 }
 
-impl<'a, Backend, Vertex: 'a, Edge> BfsIter<'a, Backend, Vertex, Edge>
+impl<'a, Vertex: 'a, Edge, Dir, Backend> BfsIter<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     fn new(
-        graph: &'a Graph<Backend>,
+        graph: &'a Graph<Vertex, Edge, Dir, Backend>,
         start_vertex: Vertex::IDType,
     ) -> Result<Self, GraphError<Vertex::IDType>> {
         graph
@@ -41,16 +41,16 @@ where
             graph,
             queue,
             visited,
-            _phantom: PhantomData,
         })
     }
 }
 
-impl<'a, Backend, Vertex, Edge> Iterator for BfsIter<'a, Backend, Vertex, Edge>
+impl<'a, Vertex, Edge, Dir, Backend> Iterator for BfsIter<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: 'a + WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     type Item = &'a Vertex;
 
@@ -75,25 +75,26 @@ where
     }
 }
 
-pub struct BfsIterMut<'a, Backend, Vertex: 'a, Edge>
+pub struct BfsIterMut<'a, Vertex: 'a, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
+    Backend: GraphBase<Vertex, Edge, Dir>,
     Vertex: WithID,
 {
-    graph: &'a mut Graph<Backend>,
+    graph: &'a mut Graph<Vertex, Edge, Dir, Backend>,
     queue: VecDeque<Vertex::IDType>,
     visited: FxHashSet<Vertex::IDType>,
     _phantom: PhantomData<&'a Edge>,
 }
 
-impl<'a, Backend, Vertex: 'a, Edge> BfsIterMut<'a, Backend, Vertex, Edge>
+impl<'a, Vertex: 'a, Edge, Dir, Backend> BfsIterMut<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     fn new(
-        graph: &'a mut Graph<Backend>,
+        graph: &'a mut Graph<Vertex, Edge, Dir, Backend>,
         start_vertex: Vertex::IDType,
     ) -> Result<Self, GraphError<Vertex::IDType>> {
         graph
@@ -114,11 +115,12 @@ where
     }
 }
 
-impl<'a, Backend, Vertex, Edge> Iterator for BfsIterMut<'a, Backend, Vertex, Edge>
+impl<'a, Vertex, Edge, Dir, Backend> Iterator for BfsIterMut<'a, Vertex, Edge, Dir, Backend>
 where
-    Backend: GraphBase<Vertex, Edge>,
-    Vertex: 'a + WithID,
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
     Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
 {
     type Item = &'a mut Vertex;
 
@@ -151,25 +153,26 @@ where
     }
 }
 
-impl<Backend> Graph<Backend> {
-    pub fn bfs_iter<'a, Vertex, Edge>(
+impl<'a, Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+where
+    Backend: GraphBase<Vertex, Edge, Dir>,
+    Vertex: 'a + WithID + Debug,
+    Vertex::IDType: Eq + Hash + Copy,
+    Edge: Debug,
+{
+    pub fn bfs_iter(
         &'a self,
         start_vertex: Vertex::IDType,
-    ) -> Result<BfsIter<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
-    where
-        Backend: GraphBase<Vertex, Edge>,
-        Vertex: 'a + WithID,
-        Vertex::IDType: Eq + Hash + Copy,
-    {
+    ) -> Result<BfsIter<'a, Vertex, Edge, Dir, Backend>, GraphError<Vertex::IDType>> {
         BfsIter::new(self, start_vertex)
     }
 
-    pub fn bfs_iter_mut<'a, Vertex, Edge>(
+    pub fn bfs_iter_mut(
         &'a mut self,
         start_vertex: Vertex::IDType,
-    ) -> Result<BfsIterMut<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
+    ) -> Result<BfsIterMut<'a, Vertex, Edge, Dir, Backend>, GraphError<Vertex::IDType>>
     where
-        Backend: GraphBase<Vertex, Edge>,
+        Backend: GraphBase<Vertex, Edge, Dir>,
         Vertex: 'a + WithID,
         Vertex::IDType: Eq + Hash + Copy,
     {

@@ -1,3 +1,5 @@
+use std::{fmt::Debug, marker::PhantomData};
+
 use crate::{
     graph::{
         adjacency_list::AdjacencyListGraph,
@@ -7,28 +9,36 @@ use crate::{
 };
 use delegate::delegate;
 
-use super::{error::ParsingError, Vertex, VertexIDType};
-
 #[derive(Debug)]
-pub struct Graph<Backend> {
+pub struct Graph<Vertex, Edge, Dir, Backend> {
     backend: Backend,
+    _phantom_vertex: PhantomData<Vertex>,
+    _phantom_edge: PhantomData<Edge>,
+    _phantom_dir: PhantomData<Dir>,
 }
 
 // Public types for simplicity
-pub type ListGraph<Vertex, Edge, Dir> = Graph<AdjacencyListGraph<Vertex, Edge, Dir>>;
+pub type ListGraph<Vertex, Edge, Dir> =
+    Graph<Vertex, Edge, Dir, AdjacencyListGraph<Vertex, Edge, Dir>>;
 pub type ListGraphBackend<Vertex, Edge, Dir> = AdjacencyListGraph<Vertex, Edge, Dir>;
 
-impl<Vertex, Edge, Backend> GraphBase<Vertex, Edge> for Graph<Backend>
+impl<Vertex, Edge, Dir, Backend> GraphBase<Vertex, Edge, Dir> for Graph<Vertex, Edge, Dir, Backend>
 where
-    Vertex: WithID,
-    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID + Debug,
+    Edge: Debug,
+    Backend: GraphBase<Vertex, Edge, Dir>,
 {
+    type Direction = Dir;
+
     fn new() -> Self
     where
         Self: Sized,
     {
         Graph {
             backend: Backend::new(),
+            _phantom_vertex: PhantomData,
+            _phantom_edge: PhantomData,
+            _phantom_dir: PhantomData,
         }
     }
 
@@ -38,6 +48,9 @@ where
     {
         Graph {
             backend: Backend::new_with_size(n_vertices),
+            _phantom_vertex: PhantomData,
+            _phantom_edge: PhantomData,
+            _phantom_dir: PhantomData,
         }
     }
 
@@ -48,7 +61,12 @@ where
     where
         Self: Sized,
     {
-        Backend::from_vertices_and_edges(vertices, edges).map(|backend| Graph { backend })
+        Backend::from_vertices_and_edges(vertices, edges).map(|backend| Graph {
+            backend,
+            _phantom_vertex: PhantomData,
+            _phantom_edge: PhantomData,
+            _phantom_dir: PhantomData,
+        })
     }
 
     delegate!(
@@ -116,13 +134,13 @@ where
     );
 }
 
-impl<Backend> Default for Graph<Backend>
+impl<Vertex, Edge, Dir, Backend> Default for Graph<Vertex, Edge, Dir, Backend>
 where
-    Backend: Default,
+    Vertex: WithID + Debug,
+    Edge: Debug,
+    Backend: GraphBase<Vertex, Edge, Dir>,
 {
     fn default() -> Self {
-        Graph {
-            backend: Backend::default(),
-        }
+        Self::new()
     }
 }

@@ -1,5 +1,8 @@
 use criterion::{BenchmarkId, Criterion};
-use graph_library::{graph::EdgeWithWeight, Graph};
+use graph_library::{
+    graph::{EdgeWithWeight, ListGraphBackend},
+    Graph, ListGraph, Undirected,
+};
 
 pub fn mst(c: &mut Criterion) {
     let files = [
@@ -14,19 +17,20 @@ pub fn mst(c: &mut Criterion) {
     // Prim
     let mut group = c.benchmark_group("Build MST (Prim)");
     for file in files {
-        let graph = Graph::from_hoever_file_with_weights(file, false, |remaining| {
-            EdgeWithWeight::new(
-                remaining[0]
-                    .parse()
-                    .expect("Graph file value must be a float"),
-            )
-        })
-        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+        let graph =
+            ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+                EdgeWithWeight::new(
+                    remaining[0]
+                        .parse()
+                        .expect("Graph file value must be a float"),
+                )
+            })
+            .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
         group.bench_function(BenchmarkId::new("mst_prim", file), |b| {
             b.iter(|| {
                 graph
-                    .mst_prim(None)
+                    .mst_prim::<ListGraphBackend<_, _, _>>(None)
                     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
             });
         });
@@ -36,19 +40,20 @@ pub fn mst(c: &mut Criterion) {
     // Kruskal
     let mut group = c.benchmark_group("Build MST (Kruskal)");
     for file in files {
-        let graph = Graph::from_hoever_file_with_weights(file, false, |remaining| {
-            EdgeWithWeight::new(
-                remaining[0]
-                    .parse()
-                    .expect("Graph file value must be a float"),
-            )
-        })
-        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+        let graph =
+            ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+                EdgeWithWeight::new(
+                    remaining[0]
+                        .parse()
+                        .expect("Graph file value must be a float"),
+                )
+            })
+            .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
         group.bench_function(BenchmarkId::new("mst_kruskal", file), |b| {
             b.iter(|| {
                 graph
-                    .mst_kruskal()
+                    .mst_kruskal::<ListGraphBackend<_, _, _>>()
                     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
             });
         });
