@@ -1,28 +1,25 @@
-use std::{cmp::Reverse, collections::BinaryHeap, fmt::Debug, hash::Hash};
+use std::{cmp::Reverse, collections::BinaryHeap, hash::Hash};
 
 use rustc_hash::FxHashSet;
 
 use crate::{
-    graph::{WeightedEdge, WithID},
+    graph::{GraphBase, WeightedEdge, WithID},
     Graph, GraphError,
 };
 
-impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
-where
-    VId: 'static + Eq + Hash + PartialOrd + Debug + Copy + Debug,
-    Vertex: 'static + WithID<VId> + Clone + Debug,
-    Edge: 'static + WeightedEdge + Clone + Debug,
-{
-    /// Creates an MST using the Prim algorithm.
-    ///
-    /// Returns the MST as a new graph
-    pub fn mst_prim(
+impl<Backend> Graph<Backend> {
+    pub fn mst_prim<Vertex, Edge, OutputBackend>(
         &self,
-        start_vertex_id: Option<VId>,
-    ) -> Result<Graph<VId, Vertex, Edge>, GraphError<VId>> {
-        let is_directed = self.is_directed();
-        let mut mst_graph = Graph::<VId, Vertex, Edge>::new(is_directed);
-
+        start_vertex_id: Option<Vertex::IDType>,
+    ) -> Result<Graph<OutputBackend>, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        OutputBackend: GraphBase<Vertex, Edge>,
+        Vertex: WithID + Clone,
+        Vertex::IDType: Copy + Eq + Hash,
+        Edge: WeightedEdge + Clone,
+    {
+        let mut mst_graph = Graph::<OutputBackend>::new();
         // Priority queue
         let mut edge_pq = BinaryHeap::new();
 

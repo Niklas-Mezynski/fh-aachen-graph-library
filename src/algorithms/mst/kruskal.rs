@@ -4,24 +4,27 @@ use std::{
 };
 
 use crate::{
-    graph::{WeightedEdge, WithID},
+    graph::{GraphBase, WeightedEdge, WithID},
     Graph, GraphError,
 };
 
 use super::union_find::UnionFind;
 
-impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
-where
-    VId: 'static + Eq + Hash + PartialOrd + Debug + Copy + Display + Debug,
-    Vertex: 'static + WithID<VId> + Clone + Debug,
-    Edge: 'static + WeightedEdge + Clone + Debug,
-{
+impl<Backend> Graph<Backend> {
     /// Creates an MST using the Kruskal's algorithm.
     ///
     /// Returns the MST as a new graph
-    pub fn mst_kruskal(&self) -> Result<Graph<VId, Vertex, Edge>, GraphError<VId>> {
-        let is_directed = self.is_directed();
-        let mut mst_graph = Graph::<VId, Vertex, Edge>::new(is_directed);
+    pub fn mst_kruskal<Vertex, Edge, OutputBackend>(
+        &self,
+    ) -> Result<Graph<OutputBackend>, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        OutputBackend: GraphBase<Vertex, Edge>,
+        Vertex: WithID + Clone,
+        Vertex::IDType: Copy + Eq + Hash + Display + Debug + 'static,
+        Edge: WeightedEdge + Clone,
+    {
+        let mut mst_graph = Graph::<OutputBackend>::new();
 
         // Get all edges and sort them
         let mut edges = self

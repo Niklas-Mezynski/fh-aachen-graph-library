@@ -2,24 +2,32 @@ use std::{collections::VecDeque, fmt::Debug, hash::Hash};
 
 use rustc_hash::FxHashSet;
 
-use crate::{algorithms::iter::TraversalType, graph::WithID, Graph, GraphError};
+use crate::{
+    algorithms::iter::TraversalType,
+    graph::{GraphBase, WithID},
+    Graph, GraphError,
+};
 
-impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + PartialOrd + Debug + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
-{
+impl<Backend> Graph<Backend> {
+    // where
+    //     VId: Eq + Hash + PartialOrd + Debug + Copy,
+    //     Vertex: WithID<VId>,
+    //     Edge: Clone,
     /// Counts the number of connected subgraphs in the graph.
     ///
     /// Optionally accepts an iterator type to specify which traversal algorithm to use.
-    pub fn count_connected_subgraphs(
+    pub fn count_connected_subgraphs<Vertex, Edge>(
         &self,
         traversal_type: Option<TraversalType>,
-    ) -> Result<u32, GraphError<VId>> {
+    ) -> Result<u32, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        Vertex: WithID + Clone,
+        Vertex::IDType: Copy + Eq + Hash,
+    {
         let iter_type = traversal_type.unwrap_or_default(); // Default to BFS
         let mut vertices = self.get_all_vertices().collect::<VecDeque<_>>();
-        let mut visited: FxHashSet<VId> = FxHashSet::default();
+        let mut visited: FxHashSet<Vertex::IDType> = FxHashSet::default();
 
         let mut count: u32 = 0;
 
@@ -50,7 +58,14 @@ where
     }
 
     /// Method that uses BFS by default
-    pub fn count_connected_subgraphs_with_default_traversal(&self) -> Result<u32, GraphError<VId>> {
+    pub fn count_connected_subgraphs_with_default_traversal<Vertex, Edge>(
+        &self,
+    ) -> Result<u32, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        Vertex: WithID + Clone,
+        Vertex::IDType: Copy + Eq + Hash,
+    {
         self.count_connected_subgraphs(None)
     }
 }

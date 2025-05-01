@@ -8,7 +8,9 @@ pub struct Vertex {
     pub id: VertexIDType,
 }
 
-impl WithID<VertexIDType> for Vertex {
+impl WithID for Vertex {
+    type IDType = VertexIDType;
+
     fn get_id(&self) -> VertexIDType {
         self.id
     }

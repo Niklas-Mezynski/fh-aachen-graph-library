@@ -1,5 +1,6 @@
 use graph_library::graph::EdgeWithWeight;
 use graph_library::{algorithms::iter::TraversalType, Graph};
+use graph_library::{Directed, ListGraph, Undirected};
 use rstest::rstest;
 
 #[rstest]
@@ -16,7 +17,7 @@ fn count_connected_subgraphs(
     // Add other traversal types as needed
     traversal_type: TraversalType,
 ) {
-    let graph = Graph::from_hoever_file(input_path, false)
+    let graph = ListGraph::<_, _, Undirected>::from_hoever_file(input_path)
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     // Count connected subgraphs
@@ -46,14 +47,15 @@ fn count_connected_subgraphs_p02_undirected_weights(
     // Add other traversal types as needed
     traversal_type: TraversalType,
 ) {
-    let graph = Graph::from_hoever_file_with_weights(input_path, false, |remaining| {
-        EdgeWithWeight::new(
-            remaining[0]
-                .parse()
-                .expect("Graph file value must be a float"),
-        )
-    })
-    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    let graph =
+        ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
+            EdgeWithWeight::new(
+                remaining[0]
+                    .parse()
+                    .expect("Graph file value must be a float"),
+            )
+        })
+        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     // Count connected subgraphs
     let count = graph

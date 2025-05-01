@@ -1,33 +1,36 @@
-use std::{collections::VecDeque, fmt::Debug, hash::Hash};
+use std::{collections::VecDeque, hash::Hash, marker::PhantomData};
 
 use rustc_hash::FxHashSet;
 
-use crate::{graph::WithID, Graph, GraphError};
+use crate::{
+    graph::{GraphBase, WithID},
+    Graph, GraphError,
+};
 
-pub struct BfsIter<'a, VId, Vertex, Edge>
+pub struct BfsIter<'a, Backend, Vertex: 'a, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge:,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID,
 {
-    graph: &'a Graph<VId, Vertex, Edge>,
-    queue: VecDeque<VId>,
-    visited: FxHashSet<VId>,
+    graph: &'a Graph<Backend>,
+    queue: VecDeque<Vertex::IDType>,
+    visited: FxHashSet<Vertex::IDType>,
+    _phantom: PhantomData<&'a Edge>,
 }
 
-impl<'a, VId, Vertex, Edge> BfsIter<'a, VId, Vertex, Edge>
+impl<'a, Backend, Vertex: 'a, Edge> BfsIter<'a, Backend, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID,
+    Vertex::IDType: Eq + Hash + Copy,
 {
     fn new(
-        graph: &'a Graph<VId, Vertex, Edge>,
-        start_vertex: VId,
-    ) -> Result<Self, GraphError<VId>> {
+        graph: &'a Graph<Backend>,
+        start_vertex: Vertex::IDType,
+    ) -> Result<Self, GraphError<Vertex::IDType>> {
         graph
             .get_vertex_by_id(start_vertex)
-            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
+            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?;
 
         let queue = VecDeque::from([start_vertex]);
 
@@ -38,21 +41,21 @@ where
             graph,
             queue,
             visited,
+            _phantom: PhantomData,
         })
     }
 }
 
-impl<'a, VId, Vertex, Edge> Iterator for BfsIter<'a, VId, Vertex, Edge>
+impl<'a, Backend, Vertex, Edge> Iterator for BfsIter<'a, Backend, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: 'a + WithID,
+    Vertex::IDType: Eq + Hash + Copy,
 {
     type Item = &'a Vertex;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
-            // Add unvisited neighbors to queue
             let neighbors = self.graph.get_adjacent_vertices(next_id);
 
             for v in neighbors {
@@ -63,7 +66,6 @@ where
                 }
             }
 
-            // Return the current vertex
             Some(self.graph.get_vertex_by_id(next_id).expect(
                 "get_vertex_by_id should not error as the vertices in the queue must exist",
             ))
@@ -73,30 +75,30 @@ where
     }
 }
 
-pub struct BfsIterMut<'a, VId, Vertex, Edge>
+pub struct BfsIterMut<'a, Backend, Vertex: 'a, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge:,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID,
 {
-    graph: &'a mut Graph<VId, Vertex, Edge>,
-    queue: VecDeque<VId>,
-    visited: FxHashSet<VId>,
+    graph: &'a mut Graph<Backend>,
+    queue: VecDeque<Vertex::IDType>,
+    visited: FxHashSet<Vertex::IDType>,
+    _phantom: PhantomData<&'a Edge>,
 }
 
-impl<'a, VId, Vertex, Edge> BfsIterMut<'a, VId, Vertex, Edge>
+impl<'a, Backend, Vertex: 'a, Edge> BfsIterMut<'a, Backend, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID,
+    Vertex::IDType: Eq + Hash + Copy,
 {
     fn new(
-        graph: &'a mut Graph<VId, Vertex, Edge>,
-        start_vertex: VId,
-    ) -> Result<Self, GraphError<VId>> {
+        graph: &'a mut Graph<Backend>,
+        start_vertex: Vertex::IDType,
+    ) -> Result<Self, GraphError<Vertex::IDType>> {
         graph
             .get_vertex_by_id(start_vertex)
-            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
+            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?;
 
         let queue = VecDeque::from([start_vertex]);
 
@@ -107,21 +109,21 @@ where
             graph,
             queue,
             visited,
+            _phantom: PhantomData,
         })
     }
 }
 
-impl<'a, VId, Vertex, Edge> Iterator for BfsIterMut<'a, VId, Vertex, Edge>
+impl<'a, Backend, Vertex, Edge> Iterator for BfsIterMut<'a, Backend, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: 'a + WithID,
+    Vertex::IDType: Eq + Hash + Copy,
 {
     type Item = &'a mut Vertex;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.queue.pop_front() {
-            // Add unvisited neighbors to queue
             let neighbors = self.graph.get_adjacent_vertices(next_id);
 
             for v in neighbors {
@@ -132,8 +134,6 @@ where
                 }
             }
 
-            // Return mutable reference to the current vertex
-            // This needs to use a method that returns &mut Vertex
             // SAFETY: This is safe because:
             // 1. We only return one mutable reference at a time
             // 2. Each vertex is visited exactly once (tracked by the visited set)
@@ -151,23 +151,28 @@ where
     }
 }
 
-impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
-{
-    pub fn bfs_iter(
-        &self,
-        start_vertex: VId,
-    ) -> Result<BfsIter<VId, Vertex, Edge>, GraphError<VId>> {
+impl<Backend> Graph<Backend> {
+    pub fn bfs_iter<'a, Vertex, Edge>(
+        &'a self,
+        start_vertex: Vertex::IDType,
+    ) -> Result<BfsIter<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        Vertex: 'a + WithID,
+        Vertex::IDType: Eq + Hash + Copy,
+    {
         BfsIter::new(self, start_vertex)
     }
 
-    pub fn bfs_iter_mut(
-        &mut self,
-        start_vertex: VId,
-    ) -> Result<BfsIterMut<VId, Vertex, Edge>, GraphError<VId>> {
+    pub fn bfs_iter_mut<'a, Vertex, Edge>(
+        &'a mut self,
+        start_vertex: Vertex::IDType,
+    ) -> Result<BfsIterMut<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        Vertex: 'a + WithID,
+        Vertex::IDType: Eq + Hash + Copy,
+    {
         BfsIterMut::new(self, start_vertex)
     }
 }
@@ -176,7 +181,10 @@ where
 mod tests {
     use rstest::*;
 
-    use crate::{graph::WithID, Graph, GraphError};
+    use crate::{
+        graph::{Directed, GraphBase, ListGraph, WithID},
+        Graph, GraphError,
+    };
     use std::collections::HashSet;
 
     #[derive(Debug, Clone, PartialEq, Eq)]
@@ -185,7 +193,9 @@ mod tests {
         value: String,
     }
 
-    impl WithID<usize> for TestVertex {
+    impl WithID for TestVertex {
+        type IDType = usize;
+
         fn get_id(&self) -> usize {
             self.id
         }
@@ -197,7 +207,7 @@ mod tests {
     }
 
     #[fixture]
-    fn create_test_graph() -> Graph<usize, TestVertex, TestEdge> {
+    fn create_test_graph() -> ListGraph<TestVertex, TestEdge, Directed> {
         // Create a graph with the following structure:
         //    0
         //   / \
@@ -206,7 +216,7 @@ mod tests {
         //    3   4
         //   /
         //  5
-        let mut graph = Graph::new(true);
+        let mut graph = Graph::new();
 
         // Add vertices
         graph
@@ -257,7 +267,7 @@ mod tests {
     }
 
     #[rstest]
-    fn test_bfs_traversal_order(create_test_graph: Graph<usize, TestVertex, TestEdge>) {
+    fn test_bfs_traversal_order(create_test_graph: ListGraph<TestVertex, TestEdge, Directed>) {
         let graph = create_test_graph;
 
         // Start BFS from vertex 0
@@ -276,7 +286,7 @@ mod tests {
     }
 
     #[rstest]
-    fn test_bfs_traversal_subset(create_test_graph: Graph<usize, TestVertex, TestEdge>) {
+    fn test_bfs_traversal_subset(create_test_graph: ListGraph<TestVertex, TestEdge, Directed>) {
         let graph = create_test_graph;
 
         // Start from vertex 3, should only visit 3 and 5
@@ -287,7 +297,7 @@ mod tests {
     }
 
     #[rstest]
-    fn test_bfs_mut_traversal(create_test_graph: Graph<usize, TestVertex, TestEdge>) {
+    fn test_bfs_mut_traversal(create_test_graph: ListGraph<TestVertex, TestEdge, Directed>) {
         let mut graph = create_test_graph;
 
         // Use mutable BFS to modify vertex values
@@ -309,7 +319,7 @@ mod tests {
 
     #[rstest]
     fn test_bfs_invalid_start() {
-        let graph: Graph<usize, TestVertex> = Graph::new(false);
+        let graph: ListGraph<TestVertex, (), Directed> = Graph::new();
 
         // Try to start BFS from non-existent vertex
         let result = graph.bfs_iter(999);
@@ -324,7 +334,7 @@ mod tests {
 
     #[rstest]
     fn test_bfs_isolated_vertex() {
-        let mut graph: Graph<usize, TestVertex> = Graph::new(false);
+        let mut graph: ListGraph<TestVertex, (), Directed> = Graph::new();
 
         // Add a single isolated vertex
         graph
@@ -343,7 +353,7 @@ mod tests {
 
     #[rstest]
     fn test_bfs_cycle() {
-        let mut graph = Graph::new(true);
+        let mut graph: ListGraph<TestVertex, TestEdge, Directed> = Graph::new();
 
         // Create a cycle: 0 -> 1 -> 2 -> 0
         graph

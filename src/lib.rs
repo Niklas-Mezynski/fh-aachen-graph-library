@@ -3,4 +3,4 @@ pub mod graph;
 
 // Re-export main types and traits
 pub use crate::graph::error::GraphError;
-pub use crate::graph::Graph;
+pub use crate::graph::{Directed, Direction, Graph, ListGraph, Undirected};

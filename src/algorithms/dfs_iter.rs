@@ -1,33 +1,36 @@
-use std::{fmt::Debug, hash::Hash, vec};
+use std::{hash::Hash, marker::PhantomData, vec};
 
 use rustc_hash::FxHashSet;
 
-use crate::{graph::WithID, Graph, GraphError};
+use crate::{
+    graph::{GraphBase, WithID},
+    Graph, GraphError,
+};
 
-pub struct DfsIter<'a, VId, Vertex, Edge>
+pub struct DfsIter<'a, Backend, Vertex: 'a, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge:,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID,
 {
-    graph: &'a Graph<VId, Vertex, Edge>,
-    stack: Vec<VId>,
-    visited: FxHashSet<VId>,
+    graph: &'a Graph<Backend>,
+    stack: Vec<Vertex::IDType>,
+    visited: FxHashSet<Vertex::IDType>,
+    _phantom: PhantomData<&'a Edge>,
 }
 
-impl<'a, VId, Vertex, Edge> DfsIter<'a, VId, Vertex, Edge>
+impl<'a, Backend, Vertex: 'a, Edge> DfsIter<'a, Backend, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: WithID,
+    Vertex::IDType: Eq + Hash + Copy,
 {
     fn new(
-        graph: &'a Graph<VId, Vertex, Edge>,
-        start_vertex: VId,
-    ) -> Result<Self, GraphError<VId>> {
+        graph: &'a Graph<Backend>,
+        start_vertex: Vertex::IDType,
+    ) -> Result<Self, GraphError<Vertex::IDType>> {
         graph
             .get_vertex_by_id(start_vertex)
-            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?; // Check if it exists
+            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?;
 
         let stack = vec![start_vertex];
 
@@ -38,38 +41,35 @@ where
             graph,
             stack,
             visited,
+            _phantom: PhantomData,
         })
     }
 }
 
-impl<'a, VId, Vertex, Edge> Iterator for DfsIter<'a, VId, Vertex, Edge>
+impl<'a, Backend, Vertex, Edge> Iterator for DfsIter<'a, Backend, Vertex, Edge>
 where
-    VId: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID<VId>,
-    Edge: Clone,
+    Backend: GraphBase<Vertex, Edge>,
+    Vertex: 'a + WithID,
+    Vertex::IDType: Eq + Hash + Copy,
 {
     type Item = &'a Vertex;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.stack.pop() {
-            // Get the current vertex first
             let current_vertex = self.graph.get_vertex_by_id(next_id).expect(
                 "get_vertex_by_id should not error as the vertices in the stack must exist",
             );
 
-            // Add unvisited neighbors to stack (back) for depth-first traversal
             let neighbors = self.graph.get_adjacent_vertices(next_id);
 
-            // In DFS, we want to explore the most recently added vertices first
             for v in neighbors {
                 let vid = v.get_id();
                 if !self.visited.contains(&vid) {
                     self.visited.insert(vid);
-                    self.stack.push(vid); // Push to back for LIFO behavior
+                    self.stack.push(vid);
                 }
             }
 
-            // Return the current vertex
             Some(current_vertex)
         } else {
             None
@@ -77,16 +77,16 @@ where
     }
 }
 
-impl<VId, Vertex, Edge> Graph<VId, Vertex, Edge>
-where
-    VId: Eq + Hash + PartialOrd + Copy,
-    Vertex: WithID<VId>,
-    Edge: Clone,
-{
-    pub fn dfs_iter(
-        &self,
-        start_vertex: VId,
-    ) -> Result<DfsIter<VId, Vertex, Edge>, GraphError<VId>> {
+impl<Backend> Graph<Backend> {
+    pub fn dfs_iter<'a, Vertex, Edge>(
+        &'a self,
+        start_vertex: Vertex::IDType,
+    ) -> Result<DfsIter<'a, Backend, Vertex, Edge>, GraphError<Vertex::IDType>>
+    where
+        Backend: GraphBase<Vertex, Edge>,
+        Vertex: 'a + WithID,
+        Vertex::IDType: Eq + Hash + Copy,
+    {
         DfsIter::new(self, start_vertex)
     }
 }

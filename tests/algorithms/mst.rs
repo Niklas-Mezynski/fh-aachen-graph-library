@@ -1,5 +1,4 @@
-use graph_library::graph::EdgeWithWeight;
-use graph_library::Graph;
+use graph_library::graph::ListGraphBackend;
 use rstest::rstest;
 
 #[derive(Debug)]
@@ -20,17 +19,23 @@ fn mst(
     #[case] expected_mst_weight: f64,
     #[values(Algorithms::Prim, Algorithms::Kruskal)] algorithm: Algorithms,
 ) {
-    let graph = Graph::from_hoever_file_with_weights(input_path, false, |remaining| {
-        EdgeWithWeight::new(
-            remaining[0]
-                .parse()
-                .expect("Graph file value must be a float"),
-        )
-    })
-    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    use graph_library::{
+        graph::{EdgeWithWeight, GraphBase},
+        ListGraph, Undirected,
+    };
+
+    let graph =
+        ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(input_path, |remaining| {
+            EdgeWithWeight::new(
+                remaining[0]
+                    .parse()
+                    .expect("Graph file value must be a float"),
+            )
+        })
+        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     let mst = match algorithm {
-        Algorithms::Prim => graph.mst_prim(None),
+        Algorithms::Prim => graph.mst_prim::<_, _, ListGraphBackend<_, _, _>>(None),
         Algorithms::Kruskal => graph.mst_kruskal(),
     }
     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
