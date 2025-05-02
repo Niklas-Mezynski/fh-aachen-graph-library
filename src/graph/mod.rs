@@ -7,6 +7,7 @@ mod direction;
 pub mod error;
 pub mod from_file;
 mod graph_structs;
+mod path;
 mod traits;
 
 pub use direction::*;
