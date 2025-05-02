@@ -1,5 +1,5 @@
+use graph_library::algorithms::iter::TraversalType;
 use graph_library::graph::EdgeWithWeight;
-use graph_library::{algorithms::iter::TraversalType, Graph};
 use graph_library::{Directed, ListGraph, Undirected};
 use rstest::rstest;
 

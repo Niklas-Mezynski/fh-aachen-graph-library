@@ -1,7 +1,7 @@
 use criterion::{BenchmarkId, Criterion};
 use graph_library::{
     graph::{EdgeWithWeight, ListGraphBackend},
-    Graph, ListGraph, Undirected,
+    ListGraph, Undirected,
 };
 
 pub fn mst(c: &mut Criterion) {
@@ -30,7 +30,7 @@ pub fn mst(c: &mut Criterion) {
         group.bench_function(BenchmarkId::new("mst_prim", file), |b| {
             b.iter(|| {
                 graph
-                    .mst_prim::<ListGraphBackend<_, _, _>>(None)
+                    .mst_prim::<ListGraphBackend<_, _, Undirected>>(None)
                     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
             });
         });
@@ -53,7 +53,7 @@ pub fn mst(c: &mut Criterion) {
         group.bench_function(BenchmarkId::new("mst_kruskal", file), |b| {
             b.iter(|| {
                 graph
-                    .mst_kruskal::<ListGraphBackend<_, _, _>>()
+                    .mst_kruskal::<ListGraphBackend<_, _, Undirected>>()
                     .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
             });
         });
