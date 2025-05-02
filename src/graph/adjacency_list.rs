@@ -155,12 +155,14 @@ where
     }
 }
 
-impl<Vertex, Edge> GraphBase<Vertex, Edge, Directed> for AdjacencyListGraph<Vertex, Edge, Directed>
+impl<Vertex, Edge> GraphBase for AdjacencyListGraph<Vertex, Edge, Directed>
 where
     Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID + Debug,
     Edge: Clone + Debug,
 {
+    type Vertex = Vertex;
+    type Edge = Edge;
     type Direction = Directed;
 
     fn new() -> Self
@@ -289,13 +291,14 @@ where
     }
 }
 
-impl<Vertex, Edge> GraphBase<Vertex, Edge, Undirected>
-    for AdjacencyListGraph<Vertex, Edge, Undirected>
+impl<Vertex, Edge> GraphBase for AdjacencyListGraph<Vertex, Edge, Undirected>
 where
     Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
     Vertex: WithID + Debug,
     Edge: Clone + Debug,
 {
+    type Vertex = Vertex;
+    type Edge = Edge;
     type Direction = Undirected;
 
     fn new() -> Self

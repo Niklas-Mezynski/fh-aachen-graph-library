@@ -1,4 +1,4 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::fmt::Debug;
 
 use crate::{
     graph::{
@@ -10,25 +10,21 @@ use crate::{
 use delegate::delegate;
 
 #[derive(Debug)]
-pub struct Graph<Vertex, Edge, Dir, Backend> {
+pub struct Graph<Backend> {
     backend: Backend,
-    _phantom_vertex: PhantomData<Vertex>,
-    _phantom_edge: PhantomData<Edge>,
-    _phantom_dir: PhantomData<Dir>,
 }
 
 // Public types for simplicity
-pub type ListGraph<Vertex, Edge, Dir> =
-    Graph<Vertex, Edge, Dir, AdjacencyListGraph<Vertex, Edge, Dir>>;
+pub type ListGraph<Vertex, Edge, Dir> = Graph<AdjacencyListGraph<Vertex, Edge, Dir>>;
 pub type ListGraphBackend<Vertex, Edge, Dir> = AdjacencyListGraph<Vertex, Edge, Dir>;
 
-impl<Vertex, Edge, Dir, Backend> GraphBase<Vertex, Edge, Dir> for Graph<Vertex, Edge, Dir, Backend>
+impl<Backend> GraphBase for Graph<Backend>
 where
-    Vertex: WithID + Debug,
-    Edge: Debug,
-    Backend: GraphBase<Vertex, Edge, Dir>,
+    Backend: GraphBase,
 {
-    type Direction = Dir;
+    type Vertex = Backend::Vertex;
+    type Edge = Backend::Edge;
+    type Direction = Backend::Direction;
 
     fn new() -> Self
     where
@@ -36,9 +32,6 @@ where
     {
         Graph {
             backend: Backend::new(),
-            _phantom_vertex: PhantomData,
-            _phantom_edge: PhantomData,
-            _phantom_dir: PhantomData,
         }
     }
 
@@ -48,97 +41,91 @@ where
     {
         Graph {
             backend: Backend::new_with_size(n_vertices),
-            _phantom_vertex: PhantomData,
-            _phantom_edge: PhantomData,
-            _phantom_dir: PhantomData,
         }
     }
 
     fn from_vertices_and_edges(
-        vertices: Vec<Vertex>,
-        edges: Vec<(<Vertex as WithID>::IDType, <Vertex as WithID>::IDType, Edge)>,
-    ) -> Result<Self, GraphError<<Vertex as WithID>::IDType>>
+        vertices: Vec<Self::Vertex>,
+        edges: Vec<(
+            <Self::Vertex as WithID>::IDType,
+            <Self::Vertex as WithID>::IDType,
+            Self::Edge,
+        )>,
+    ) -> Result<Self, GraphError<<Self::Vertex as WithID>::IDType>>
     where
         Self: Sized,
     {
-        Backend::from_vertices_and_edges(vertices, edges).map(|backend| Graph {
-            backend,
-            _phantom_vertex: PhantomData,
-            _phantom_edge: PhantomData,
-            _phantom_dir: PhantomData,
-        })
+        Backend::from_vertices_and_edges(vertices, edges).map(|backend| Graph { backend })
     }
 
     delegate!(
         to self.backend {
             fn push_vertex(
-            &mut self,
-            vertex: Vertex,
-        ) -> Result<(), GraphError<<Vertex as WithID>::IDType>>;
+                &mut self,
+                vertex: Self::Vertex,
+            ) -> Result<(), GraphError<<Self::Vertex as WithID>::IDType>>;
 
-        fn push_edge(
-            &mut self,
-            from: <Vertex as WithID>::IDType,
-            to: <Vertex as WithID>::IDType,
-            edge: Edge,
-        ) -> Result<(), GraphError<<Vertex as WithID>::IDType>>;
+            fn push_edge(
+                &mut self,
+                from: <Self::Vertex as WithID>::IDType,
+                to: <Self::Vertex as WithID>::IDType,
+                edge: Self::Edge,
+            ) -> Result<(), GraphError<<Self::Vertex as WithID>::IDType>>;
 
-        fn is_directed(&self) -> bool;
+            fn is_directed(&self) -> bool;
 
-        fn get_vertex_by_id(&self, vertex_id: <Vertex as WithID>::IDType) -> Option<&Vertex>;
+            fn get_vertex_by_id(&self, vertex_id: <Self::Vertex as WithID>::IDType) -> Option<&Self::Vertex>;
 
-        fn get_vertex_by_id_mut(
-            &mut self,
-            vertex_id: <Vertex as WithID>::IDType,
-        ) -> Option<&mut Vertex>;
+            fn get_vertex_by_id_mut(
+                &mut self,
+                vertex_id: <Self::Vertex as WithID>::IDType,
+            ) -> Option<&mut Self::Vertex>;
 
-        fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
-        where
-            Vertex: 'a;
+            fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
+            where
+                Self::Vertex: 'a;
 
-        fn get_all_edges<'a>(
-            &'a self,
-        ) -> impl Iterator<
-            Item = (
-                <Vertex as WithID>::IDType,
-                <Vertex as WithID>::IDType,
-                &'a Edge,
-            ),
-        >
-        where
-            Edge: 'a;
+            fn get_all_edges<'a>(
+                &'a self,
+            ) -> impl Iterator<
+                Item = (
+                    <Self::Vertex as WithID>::IDType,
+                    <Self::Vertex as WithID>::IDType,
+                    &'a Self::Edge,
+                ),
+            >
+            where
+                Self::Edge: 'a;
 
-        fn get_adjacent_vertices<'a>(
-            &'a self,
-            vertex_id: <Vertex as WithID>::IDType,
-        ) -> impl Iterator<Item = &'a Vertex>
-        where
-            Vertex: 'a;
+            fn get_adjacent_vertices<'a>(
+                &'a self,
+                vertex_id: <Self::Vertex as WithID>::IDType,
+            ) -> impl Iterator<Item = &'a Self::Vertex>
+            where
+                Self::Vertex: 'a;
 
-        fn get_adjacent_vertices_with_edges<'a>(
-            &'a self,
-            vertex_id: <Vertex as WithID>::IDType,
-        ) -> impl Iterator<Item = (&'a Vertex, &'a Edge)>
-        where
-            Vertex: 'a,
-            Edge: 'a;
+            fn get_adjacent_vertices_with_edges<'a>(
+                &'a self,
+                vertex_id: <Self::Vertex as WithID>::IDType,
+            ) -> impl Iterator<Item = (&'a Self::Vertex, &'a Self::Edge)>
+            where
+                Self::Vertex: 'a,
+                Self::Edge: 'a;
 
-        fn vertex_count(&self) -> usize;
+            fn vertex_count(&self) -> usize;
 
-        fn edge_count(&self) -> usize;
+            fn edge_count(&self) -> usize;
 
-        fn get_total_weight(&self) -> <Edge>::WeightType
-        where
-            Edge: WeightedEdge;
+            fn get_total_weight(&self) -> <Self::Edge as WeightedEdge>::WeightType
+            where
+                Self::Edge: WeightedEdge;
         }
     );
 }
 
-impl<Vertex, Edge, Dir, Backend> Default for Graph<Vertex, Edge, Dir, Backend>
+impl<Backend> Default for Graph<Backend>
 where
-    Vertex: WithID + Debug,
-    Edge: Debug,
-    Backend: GraphBase<Vertex, Edge, Dir>,
+    Backend: GraphBase,
 {
     fn default() -> Self {
         Self::new()
@@ -169,9 +156,9 @@ mod tests {
     #[rstest]
     fn test_push_vertex(
         #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            (),
-            Directed,
+            Vertex = MockVertex,
+            Edge = (),
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -188,9 +175,9 @@ mod tests {
     #[rstest]
     fn test_push_edge(
         #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Directed,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -219,9 +206,9 @@ mod tests {
     #[rstest]
     fn test_push_undirected_edge(
         #[values(ListGraph::<MockVertex, i32, Undirected>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Undirected,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Undirected,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -250,9 +237,9 @@ mod tests {
     #[rstest]
     fn test_get_vertex(
         #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            (),
-            Directed,
+            Vertex = MockVertex,
+            Edge = (),
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -271,9 +258,9 @@ mod tests {
     #[rstest]
     fn test_get_all_vertices(
         #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            (),
-            Directed,
+            Vertex = MockVertex,
+            Edge = (),
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -291,9 +278,9 @@ mod tests {
     #[rstest]
     fn test_get_adjacent_vertices(
         #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Directed,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -321,9 +308,9 @@ mod tests {
     #[rstest]
     fn test_get_adjacent_vertices_with_edges(
         #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Directed,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -378,9 +365,9 @@ mod tests {
     #[rstest]
     fn test_get_total_weight_directed(
         #[values(ListGraph::<MockVertex, MockWeightedEdge, Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            MockWeightedEdge,
-            Directed,
+            Vertex = MockVertex,
+            Edge = MockWeightedEdge,
+            Direction = Directed,
         >,
     ) {
         let vertex1 = MockVertex { id: 1 };
@@ -405,7 +392,11 @@ mod tests {
     #[rstest]
     fn test_get_total_weight_undirected(
         #[values(ListGraph::<MockVertex, MockWeightedEdge, Undirected>::new())]
-        mut graph: impl GraphBase<MockVertex, MockWeightedEdge, Undirected>,
+        mut graph: impl GraphBase<
+            Vertex = MockVertex,
+            Edge = MockWeightedEdge,
+            Direction = Undirected,
+        >,
     ) {
         let vertex1 = MockVertex { id: 1 };
         let vertex2 = MockVertex { id: 2 };
@@ -429,9 +420,9 @@ mod tests {
     #[rstest]
     fn test_get_all_edges_directed(
         #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Directed,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Directed,
         >,
     ) {
         let v1 = MockVertex { id: 1 };
@@ -450,9 +441,9 @@ mod tests {
     #[rstest]
     fn test_get_all_edges_undirected(
         #[values(ListGraph::<MockVertex, i32, Undirected>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Undirected,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Undirected,
         >,
     ) {
         let v1 = MockVertex { id: 1 };
@@ -472,9 +463,9 @@ mod tests {
     #[rstest]
     fn test_vertex_count(
         #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            (),
-            Directed,
+            Vertex = MockVertex,
+            Edge = (),
+            Direction = Directed,
         >,
     ) {
         assert_eq!(graph.vertex_count(), 0);
@@ -493,9 +484,9 @@ mod tests {
     #[rstest]
     fn test_edge_count_directed(
         #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Directed,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Directed,
         >,
     ) {
         graph.push_vertex(MockVertex { id: 1 }).unwrap();
@@ -518,9 +509,9 @@ mod tests {
     #[rstest]
     fn test_edge_count_undirected(
         #[values(ListGraph::<MockVertex, i32, Undirected>::new())] mut graph: impl GraphBase<
-            MockVertex,
-            i32,
-            Undirected,
+            Vertex = MockVertex,
+            Edge = i32,
+            Direction = Undirected,
         >,
     ) {
         graph.push_vertex(MockVertex { id: 1 }).unwrap();

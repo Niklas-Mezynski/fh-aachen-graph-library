@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, collections::BinaryHeap, fmt::Debug, hash::Hash};
+use std::{cmp::Reverse, collections::BinaryHeap, hash::Hash};
 
 use rustc_hash::FxHashSet;
 
@@ -7,24 +7,25 @@ use crate::{
     Graph, GraphError,
 };
 
-type MSTResult<Vertex, Edge, Dir, OutputBackend> =
-    Result<Graph<Vertex, Edge, Dir, OutputBackend>, GraphError<<Vertex as WithID>::IDType>>;
-
-impl<Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+impl<Backend> Graph<Backend>
 where
-    Backend: GraphBase<Vertex, Edge, Dir>,
-    Vertex: WithID + Clone + Debug,
-    Vertex::IDType: Copy + Eq + Hash,
-    Edge: WeightedEdge + Clone + Debug,
+    Backend: GraphBase,
+    Backend::Vertex: Clone,
+    <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash,
+    Backend::Edge: WeightedEdge + Clone,
 {
     pub fn mst_prim<OutputBackend>(
         &self,
-        start_vertex_id: Option<Vertex::IDType>,
-    ) -> MSTResult<Vertex, Edge, Backend::Direction, OutputBackend>
+        start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
+    ) -> Result<Graph<OutputBackend>, GraphError<<Backend::Vertex as WithID>::IDType>>
     where
-        OutputBackend: GraphBase<Vertex, Edge, Backend::Direction>,
+        OutputBackend: GraphBase<
+            Vertex = Backend::Vertex,
+            Edge = Backend::Edge,
+            Direction = Backend::Direction,
+        >,
     {
-        let mut mst_graph = Graph::<Vertex, Edge, Backend::Direction, OutputBackend>::new();
+        let mut mst_graph = Graph::<OutputBackend>::new();
         // Priority queue
         let mut edge_pq = BinaryHeap::new();
 

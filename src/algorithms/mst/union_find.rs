@@ -16,7 +16,7 @@ where
 
 impl<VId> UnionFind<VId>
 where
-    VId: Eq + Hash + Copy + Debug,
+    VId: Eq + Hash + Copy,
 {
     pub fn new() -> Self {
         UnionFind {

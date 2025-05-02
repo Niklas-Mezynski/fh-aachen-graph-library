@@ -1,34 +1,29 @@
-use std::{fmt::Debug, hash::Hash, marker::PhantomData, vec};
-
 use rustc_hash::FxHashSet;
+use std::hash::Hash;
 
 use crate::{
     graph::{GraphBase, WithID},
     Graph, GraphError,
 };
 
-pub struct DfsIter<'a, Vertex: 'a, Edge, Dir, Backend>
+pub struct DfsIter<'a, Backend>
 where
-    Backend: GraphBase<Vertex, Edge, Dir>,
-    Vertex: WithID,
+    Backend: GraphBase,
 {
-    graph: &'a Graph<Vertex, Edge, Dir, Backend>,
-    stack: Vec<Vertex::IDType>,
-    visited: FxHashSet<Vertex::IDType>,
-    _phantom: PhantomData<&'a Edge>,
+    graph: &'a Graph<Backend>,
+    stack: Vec<<Backend::Vertex as WithID>::IDType>,
+    visited: FxHashSet<<Backend::Vertex as WithID>::IDType>,
 }
 
-impl<'a, Vertex: 'a, Edge, Dir, Backend> DfsIter<'a, Vertex, Edge, Dir, Backend>
+impl<'a, Backend> DfsIter<'a, Backend>
 where
-    Backend: GraphBase<Vertex, Edge, Dir>,
-    Vertex: WithID + Debug,
-    Vertex::IDType: Eq + Hash + Copy,
-    Edge: Debug,
+    Backend: GraphBase,
+    <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
 {
     fn new(
-        graph: &'a Graph<Vertex, Edge, Dir, Backend>,
-        start_vertex: Vertex::IDType,
-    ) -> Result<Self, GraphError<Vertex::IDType>> {
+        graph: &'a Graph<Backend>,
+        start_vertex: <Backend::Vertex as WithID>::IDType,
+    ) -> Result<Self, GraphError<<Backend::Vertex as WithID>::IDType>> {
         graph
             .get_vertex_by_id(start_vertex)
             .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?;
@@ -42,19 +37,16 @@ where
             graph,
             stack,
             visited,
-            _phantom: PhantomData,
         })
     }
 }
 
-impl<'a, Vertex, Edge, Dir, Backend> Iterator for DfsIter<'a, Vertex, Edge, Dir, Backend>
+impl<'a, Backend> Iterator for DfsIter<'a, Backend>
 where
-    Backend: GraphBase<Vertex, Edge, Dir>,
-    Vertex: 'a + WithID + Debug,
-    Vertex::IDType: Eq + Hash + Copy,
-    Edge: Debug,
+    Backend: GraphBase,
+    <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
 {
-    type Item = &'a Vertex;
+    type Item = &'a Backend::Vertex;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(next_id) = self.stack.pop() {
@@ -79,17 +71,15 @@ where
     }
 }
 
-impl<'a, Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+impl<Backend> Graph<Backend>
 where
-    Backend: GraphBase<Vertex, Edge, Dir>,
-    Vertex: 'a + WithID + Debug,
-    Vertex::IDType: Eq + Hash + Copy,
-    Edge: Debug,
+    Backend: GraphBase,
+    <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
 {
     pub fn dfs_iter(
-        &'a self,
-        start_vertex: Vertex::IDType,
-    ) -> Result<DfsIter<'a, Vertex, Edge, Dir, Backend>, GraphError<Vertex::IDType>> {
+        &self,
+        start_vertex: <Backend::Vertex as WithID>::IDType,
+    ) -> Result<DfsIter<'_, Backend>, GraphError<<Backend::Vertex as WithID>::IDType>> {
         DfsIter::new(self, start_vertex)
     }
 }

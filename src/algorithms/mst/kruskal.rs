@@ -10,26 +10,32 @@ use crate::{
 
 use super::union_find::UnionFind;
 
-type MSTResult<Vertex, Edge, Dir, OutputBackend> =
-    Result<Graph<Vertex, Edge, Dir, OutputBackend>, GraphError<<Vertex as WithID>::IDType>>;
-
-impl<Vertex, Edge, Dir, Backend> Graph<Vertex, Edge, Dir, Backend>
+impl<Backend> Graph<Backend>
 where
-    Backend: GraphBase<Vertex, Edge, Dir>,
-    Vertex: WithID + Clone + Debug,
-    Vertex::IDType: Copy + Eq + Hash + Display + Debug + 'static,
-    Edge: WeightedEdge + Clone + Debug,
+    Backend: GraphBase,
+    Backend::Vertex: Clone,
+    <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash + Debug + Display + 'static,
+    Backend::Edge: WeightedEdge + Clone,
+    // where
+    //     Backend: GraphBase<Vertex, Edge, Dir>,
+    //     Vertex: WithID + Clone + Debug,
+    //     Vertex::IDType: Copy + Eq + Hash + Display + Debug + 'static,
+    //     Edge: WeightedEdge + Clone + Debug,
 {
     /// Creates an MST using the Kruskal's algorithm.
     ///
     /// Returns the MST as a new graph
     pub fn mst_kruskal<OutputBackend>(
         &self,
-    ) -> MSTResult<Vertex, Edge, Backend::Direction, OutputBackend>
+    ) -> Result<Graph<OutputBackend>, GraphError<<Backend::Vertex as WithID>::IDType>>
     where
-        OutputBackend: GraphBase<Vertex, Edge, Backend::Direction>,
+        OutputBackend: GraphBase<
+            Vertex = Backend::Vertex,
+            Edge = Backend::Edge,
+            Direction = Backend::Direction,
+        >,
     {
-        let mut mst_graph = Graph::<Vertex, Edge, Backend::Direction, OutputBackend>::new();
+        let mut mst_graph = Graph::<OutputBackend>::new();
 
         // Get all edges and sort them
         let mut edges = self
