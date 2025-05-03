@@ -14,7 +14,7 @@ pub trait WeightedEdge {
     fn get_weight(&self) -> Self::WeightType;
 }
 
-type EdgeTuple<VId, Edge> = (VId, VId, Edge);
+pub type EdgeTuple<VId, Edge> = (VId, VId, Edge);
 pub trait GraphBase: Default {
     type Vertex: WithID;
     type Edge;

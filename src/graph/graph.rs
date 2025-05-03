@@ -9,6 +9,8 @@ use crate::{
 };
 use delegate::delegate;
 
+use super::adjacency_matrix::AdjacencyMatrixGraph;
+
 #[derive(Debug)]
 pub struct Graph<Backend> {
     backend: Backend,
@@ -17,6 +19,9 @@ pub struct Graph<Backend> {
 // Public types for simplicity
 pub type ListGraph<Vertex, Edge, Dir> = Graph<AdjacencyListGraph<Vertex, Edge, Dir>>;
 pub type ListGraphBackend<Vertex, Edge, Dir> = AdjacencyListGraph<Vertex, Edge, Dir>;
+
+pub type MatrixGraph<Vertex, Edge, Dir> = Graph<AdjacencyMatrixGraph<Vertex, Edge, Dir>>;
+pub type MatrixGraphBackend<Vertex, Edge, Dir> = AdjacencyMatrixGraph<Vertex, Edge, Dir>;
 
 impl<Backend> GraphBase for Graph<Backend>
 where
@@ -142,27 +147,27 @@ mod tests {
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     struct MockVertex {
-        id: u32,
+        id: usize,
     }
 
     impl WithID for MockVertex {
-        type IDType = u32;
+        type IDType = usize;
 
-        fn get_id(&self) -> u32 {
+        fn get_id(&self) -> usize {
             self.id
         }
     }
 
     #[rstest]
     fn test_push_vertex(
-        #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = (),
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, (), Directed>::new(),
+            MatrixGraph::<MockVertex, (), Directed>::new(),
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = (), Direction = Directed>,
     ) {
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
 
         assert!(graph.push_vertex(vertex1).is_ok());
         assert!(graph.push_vertex(vertex2).is_ok());
@@ -174,175 +179,175 @@ mod tests {
 
     #[rstest]
     fn test_push_edge(
-        #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Directed>::new(),
+            MatrixGraph::<MockVertex, i32, Directed>::new(),
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Directed>,
     ) {
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
 
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
 
-        assert!(graph.push_edge(1, 2, 10).is_ok());
-        assert!(graph.push_edge(2, 1, 30).is_ok());
+        assert!(graph.push_edge(0, 1, 10).is_ok());
+        assert!(graph.push_edge(1, 0, 30).is_ok());
 
         assert!(matches!(
-            graph.push_edge(1, 2, 20),
-            Err(GraphError::DuplicateEdge(1, 2))
+            graph.push_edge(0, 1, 20),
+            Err(GraphError::DuplicateEdge(0, 1))
         )); // Duplicate edge
         assert!(matches!(
-            graph.push_edge(3, 1, 40),
-            Err(GraphError::VertexNotFound(3))
+            graph.push_edge(2, 0, 40),
+            Err(GraphError::VertexNotFound(2))
         )); // Non existent vertex
         assert!(matches!(
-            graph.push_edge(1, 3, 40),
-            Err(GraphError::VertexNotFound(3))
+            graph.push_edge(0, 2, 40),
+            Err(GraphError::VertexNotFound(2))
         )); // Non existent vertex
     }
 
     #[rstest]
     fn test_push_undirected_edge(
-        #[values(ListGraph::<MockVertex, i32, Undirected>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Undirected,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Undirected>::new(),
+            MatrixGraph::<MockVertex, i32, Undirected>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Undirected>,
     ) {
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
 
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
 
-        assert!(graph.push_edge(1, 2, 10).is_ok());
+        assert!(graph.push_edge(0, 1, 10).is_ok());
         assert!(matches!(
-            graph.push_edge(1, 2, 20),
-            Err(GraphError::DuplicateEdge(1, 2))
+            graph.push_edge(0, 1, 20),
+            Err(GraphError::DuplicateEdge(0, 1))
         )); // Duplicate edge
+
+        let adj_0: Vec<_> = graph.get_adjacent_vertices_with_edges(0).collect();
+        assert_eq!(adj_0.len(), 1);
+        assert_eq!(adj_0[0].0.id, 1);
+        assert_eq!(adj_0[0].1, &10);
 
         let adj_1: Vec<_> = graph.get_adjacent_vertices_with_edges(1).collect();
         assert_eq!(adj_1.len(), 1);
-        assert_eq!(adj_1[0].0.id, 2);
+        assert_eq!(adj_1[0].0.id, 0);
         assert_eq!(adj_1[0].1, &10);
-
-        let adj_2: Vec<_> = graph.get_adjacent_vertices_with_edges(2).collect();
-        assert_eq!(adj_2.len(), 1);
-        assert_eq!(adj_2[0].0.id, 1);
-        assert_eq!(adj_2[0].1, &10);
     }
 
     #[rstest]
     fn test_get_vertex(
-        #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = (),
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, (), Directed>::new(),
+            MatrixGraph::<MockVertex, (), Directed>::new(),
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = (), Direction = Directed>,
     ) {
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
 
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
 
+        let v = graph.get_vertex_by_id(0).unwrap();
+        assert_eq!(v.id, 0);
         let v = graph.get_vertex_by_id(1).unwrap();
         assert_eq!(v.id, 1);
-        let v = graph.get_vertex_by_id(2).unwrap();
-        assert_eq!(v.id, 2);
-        assert!(graph.get_vertex_by_id(3).is_none());
+        assert!(graph.get_vertex_by_id(2).is_none());
     }
 
     #[rstest]
     fn test_get_all_vertices(
-        #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = (),
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, (), Directed>::new(),
+            MatrixGraph::<MockVertex, (), Directed>::new(),
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = (), Direction = Directed>,
     ) {
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
 
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
 
         let vertices: Vec<_> = graph.get_all_vertices().map(|v| v.get_id()).collect();
         assert_eq!(vertices.len(), 2);
+        assert!(vertices.contains(&0));
         assert!(vertices.contains(&1));
-        assert!(vertices.contains(&2));
     }
 
     #[rstest]
     fn test_get_adjacent_vertices(
-        #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Directed>::new(),
+            MatrixGraph::<MockVertex, i32, Directed>::new(),
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Directed>,
     ) {
-        let vertex1 = MockVertex { id: 1 };
-        let vertex2 = MockVertex { id: 2 };
-        let vertex3 = MockVertex { id: 3 };
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
+        let vertex3 = MockVertex { id: 2 };
 
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
         graph.push_vertex(vertex3).unwrap();
 
-        graph.push_edge(1, 2, 10).unwrap();
-        graph.push_edge(1, 3, 20).unwrap();
+        graph.push_edge(0, 1, 10).unwrap();
+        graph.push_edge(0, 2, 20).unwrap();
+
+        let adjacent_vertices = graph.get_adjacent_vertices(0).collect::<Vec<_>>();
+        assert_eq!(adjacent_vertices.len(), 2);
+        assert!(adjacent_vertices.iter().any(|v| v.id == 1));
+        assert!(adjacent_vertices.iter().any(|v| v.id == 2));
 
         let adjacent_vertices = graph.get_adjacent_vertices(1).collect::<Vec<_>>();
-        assert_eq!(adjacent_vertices.len(), 2);
-        assert!(adjacent_vertices.iter().any(|v| v.id == 2));
-        assert!(adjacent_vertices.iter().any(|v| v.id == 3));
-
-        let adjacent_vertices = graph.get_adjacent_vertices(2).collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 0);
 
-        assert_eq!(graph.get_adjacent_vertices(4).collect::<Vec<_>>().len(), 0);
+        assert_eq!(graph.get_adjacent_vertices(3).collect::<Vec<_>>().len(), 0);
     }
 
     #[rstest]
     fn test_get_adjacent_vertices_with_edges(
-        #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Directed>::new(),
+            MatrixGraph::<MockVertex, i32, Directed>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Directed>,
     ) {
+        let vertex0 = MockVertex { id: 0 };
         let vertex1 = MockVertex { id: 1 };
         let vertex2 = MockVertex { id: 2 };
-        let vertex3 = MockVertex { id: 3 };
 
+        graph.push_vertex(vertex0).unwrap();
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
-        graph.push_vertex(vertex3).unwrap();
 
-        graph.push_edge(1, 2, 10).unwrap();
-        graph.push_edge(1, 3, 20).unwrap();
+        graph.push_edge(0, 1, 10).unwrap();
+        graph.push_edge(0, 2, 20).unwrap();
 
         let adjacent_vertices = graph
-            .get_adjacent_vertices_with_edges(1)
+            .get_adjacent_vertices_with_edges(0)
             .collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 2);
         assert!(adjacent_vertices
             .iter()
-            .any(|(v, e)| v.get_id() == 2 && **e == 10));
+            .any(|(v, e)| v.get_id() == 1 && **e == 10));
         assert!(adjacent_vertices
             .iter()
-            .any(|(v, e)| v.get_id() == 3 && **e == 20));
+            .any(|(v, e)| v.get_id() == 2 && **e == 20));
 
         let adjacent_vertices = graph
-            .get_adjacent_vertices_with_edges(2)
+            .get_adjacent_vertices_with_edges(1)
             .collect::<Vec<_>>();
         assert_eq!(adjacent_vertices.len(), 0);
 
         assert_eq!(
             graph
-                .get_adjacent_vertices_with_edges(4)
+                .get_adjacent_vertices_with_edges(3)
                 .collect::<Vec<_>>()
                 .len(),
             0
@@ -364,25 +369,29 @@ mod tests {
 
     #[rstest]
     fn test_get_total_weight_directed(
-        #[values(ListGraph::<MockVertex, MockWeightedEdge, Directed>::new())] mut graph: impl GraphBase<
+        #[values(
+            ListGraph::<MockVertex, MockWeightedEdge, Directed>::new(),
+            MatrixGraph::<MockVertex, MockWeightedEdge, Directed>::new()
+        )]
+        mut graph: impl GraphBase<
             Vertex = MockVertex,
             Edge = MockWeightedEdge,
             Direction = Directed,
         >,
     ) {
+        let vertex0 = MockVertex { id: 0 };
         let vertex1 = MockVertex { id: 1 };
         let vertex2 = MockVertex { id: 2 };
-        let vertex3 = MockVertex { id: 3 };
 
+        graph.push_vertex(vertex0).unwrap();
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
-        graph.push_vertex(vertex3).unwrap();
 
         graph
-            .push_edge(1, 2, MockWeightedEdge { weight: 10 })
+            .push_edge(0, 1, MockWeightedEdge { weight: 10 })
             .unwrap();
         graph
-            .push_edge(1, 3, MockWeightedEdge { weight: 20 })
+            .push_edge(0, 2, MockWeightedEdge { weight: 20 })
             .unwrap();
 
         let total_weight = graph.get_total_weight();
@@ -391,26 +400,29 @@ mod tests {
 
     #[rstest]
     fn test_get_total_weight_undirected(
-        #[values(ListGraph::<MockVertex, MockWeightedEdge, Undirected>::new())]
+        #[values(
+            ListGraph::<MockVertex, MockWeightedEdge, Undirected>::new(),
+            MatrixGraph::<MockVertex, MockWeightedEdge, Undirected>::new()
+        )]
         mut graph: impl GraphBase<
             Vertex = MockVertex,
             Edge = MockWeightedEdge,
             Direction = Undirected,
         >,
     ) {
+        let vertex0 = MockVertex { id: 0 };
         let vertex1 = MockVertex { id: 1 };
         let vertex2 = MockVertex { id: 2 };
-        let vertex3 = MockVertex { id: 3 };
 
+        graph.push_vertex(vertex0).unwrap();
         graph.push_vertex(vertex1).unwrap();
         graph.push_vertex(vertex2).unwrap();
-        graph.push_vertex(vertex3).unwrap();
 
         graph
-            .push_edge(1, 2, MockWeightedEdge { weight: 10 })
+            .push_edge(0, 1, MockWeightedEdge { weight: 10 })
             .unwrap();
         graph
-            .push_edge(1, 3, MockWeightedEdge { weight: 20 })
+            .push_edge(0, 2, MockWeightedEdge { weight: 20 })
             .unwrap();
 
         let total_weight = graph.get_total_weight();
@@ -419,115 +431,115 @@ mod tests {
 
     #[rstest]
     fn test_get_all_edges_directed(
-        #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Directed>::new(),
+            MatrixGraph::<MockVertex, i32, Directed>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Directed>,
     ) {
-        let v1 = MockVertex { id: 1 };
-        let v2 = MockVertex { id: 2 };
-        let v3 = MockVertex { id: 3 };
+        let v1 = MockVertex { id: 0 };
+        let v2 = MockVertex { id: 1 };
+        let v3 = MockVertex { id: 2 };
         graph.push_vertex(v1).unwrap();
         graph.push_vertex(v2).unwrap();
         graph.push_vertex(v3).unwrap();
-        graph.push_edge(1, 2, 10).unwrap();
-        graph.push_edge(2, 3, 20).unwrap();
+        graph.push_edge(0, 1, 10).unwrap();
+        graph.push_edge(1, 2, 20).unwrap();
         let mut edges = graph.get_all_edges().collect::<Vec<_>>();
         edges.sort_by_key(|(from, to, _)| (*from, *to));
-        assert_eq!(edges, vec![(1, 2, &10), (2, 3, &20)]);
+        assert_eq!(edges, vec![(0, 1, &10), (1, 2, &20)]);
     }
 
     #[rstest]
     fn test_get_all_edges_undirected(
-        #[values(ListGraph::<MockVertex, i32, Undirected>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Undirected,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Undirected>::new(),
+            MatrixGraph::<MockVertex, i32, Undirected>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Undirected>,
     ) {
-        let v1 = MockVertex { id: 1 };
-        let v2 = MockVertex { id: 2 };
-        let v3 = MockVertex { id: 3 };
+        let v1 = MockVertex { id: 0 };
+        let v2 = MockVertex { id: 1 };
+        let v3 = MockVertex { id: 2 };
         graph.push_vertex(v1).unwrap();
         graph.push_vertex(v2).unwrap();
         graph.push_vertex(v3).unwrap();
-        graph.push_edge(1, 2, 10).unwrap();
-        graph.push_edge(2, 3, 20).unwrap();
+        graph.push_edge(0, 1, 10).unwrap();
+        graph.push_edge(1, 2, 20).unwrap();
         let mut edges = graph.get_all_edges().collect::<Vec<_>>();
         edges.sort_by_key(|(from, to, _)| (*from, *to));
         // Only one direction per edge
-        assert_eq!(edges, vec![(1, 2, &10), (2, 3, &20)]);
+        assert_eq!(edges, vec![(0, 1, &10), (1, 2, &20)]);
     }
 
     #[rstest]
     fn test_vertex_count(
-        #[values(ListGraph::<MockVertex, (), Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = (),
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, (), Directed>::new(),
+            MatrixGraph::<MockVertex, (), Directed>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = (), Direction = Directed>,
     ) {
         assert_eq!(graph.vertex_count(), 0);
 
-        graph.push_vertex(MockVertex { id: 1 }).unwrap();
+        graph.push_vertex(MockVertex { id: 0 }).unwrap();
         assert_eq!(graph.vertex_count(), 1);
 
-        graph.push_vertex(MockVertex { id: 2 }).unwrap();
+        graph.push_vertex(MockVertex { id: 1 }).unwrap();
         assert_eq!(graph.vertex_count(), 2);
 
         // Duplicate vertex should not increase count
-        assert!(graph.push_vertex(MockVertex { id: 1 }).is_err());
+        assert!(graph.push_vertex(MockVertex { id: 0 }).is_err());
         assert_eq!(graph.vertex_count(), 2);
     }
 
     #[rstest]
     fn test_edge_count_directed(
-        #[values(ListGraph::<MockVertex, i32, Directed>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Directed,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Directed>::new(),
+            MatrixGraph::<MockVertex, i32, Directed>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Directed>,
     ) {
+        graph.push_vertex(MockVertex { id: 0 }).unwrap();
         graph.push_vertex(MockVertex { id: 1 }).unwrap();
         graph.push_vertex(MockVertex { id: 2 }).unwrap();
-        graph.push_vertex(MockVertex { id: 3 }).unwrap();
 
         assert_eq!(graph.edge_count(), 0);
 
-        graph.push_edge(1, 2, 10).unwrap();
+        graph.push_edge(0, 1, 10).unwrap();
         assert_eq!(graph.edge_count(), 1);
 
-        graph.push_edge(2, 3, 20).unwrap();
+        graph.push_edge(1, 2, 20).unwrap();
         assert_eq!(graph.edge_count(), 2);
 
         // Duplicate edge should not increase count
-        assert!(graph.push_edge(1, 2, 30).is_err());
+        assert!(graph.push_edge(0, 1, 30).is_err());
         assert_eq!(graph.edge_count(), 2);
     }
 
     #[rstest]
     fn test_edge_count_undirected(
-        #[values(ListGraph::<MockVertex, i32, Undirected>::new())] mut graph: impl GraphBase<
-            Vertex = MockVertex,
-            Edge = i32,
-            Direction = Undirected,
-        >,
+        #[values(
+            ListGraph::<MockVertex, i32, Undirected>::new(),
+            MatrixGraph::<MockVertex, i32, Undirected>::new()
+        )]
+        mut graph: impl GraphBase<Vertex = MockVertex, Edge = i32, Direction = Undirected>,
     ) {
+        graph.push_vertex(MockVertex { id: 0 }).unwrap();
         graph.push_vertex(MockVertex { id: 1 }).unwrap();
         graph.push_vertex(MockVertex { id: 2 }).unwrap();
-        graph.push_vertex(MockVertex { id: 3 }).unwrap();
 
         assert_eq!(graph.edge_count(), 0);
 
-        graph.push_edge(1, 2, 10).unwrap();
+        graph.push_edge(0, 1, 10).unwrap();
         assert_eq!(graph.edge_count(), 1);
 
-        graph.push_edge(2, 3, 20).unwrap();
+        graph.push_edge(1, 2, 20).unwrap();
         assert_eq!(graph.edge_count(), 2);
 
         // Duplicate edge should not increase count
-        assert!(graph.push_edge(1, 2, 30).is_err());
+        assert!(graph.push_edge(0, 1, 30).is_err());
         assert_eq!(graph.edge_count(), 2);
     }
 }

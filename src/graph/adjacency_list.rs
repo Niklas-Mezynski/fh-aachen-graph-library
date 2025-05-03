@@ -17,9 +17,9 @@ pub struct AdjacencyListGraph<Vertex: WithID, Edge, Dir: Direction> {
 
 impl<Vertex: WithID, Edge, Dir: Direction> AdjacencyListGraph<Vertex, Edge, Dir>
 where
-    Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID + Debug,
-    Edge: Clone + Debug,
+    Vertex::IDType: Eq + Hash + PartialOrd + Copy,
+    Vertex: WithID,
+    Edge: Clone,
 {
     /// Create a new, empty Graph with an Adjacency List representation
     pub fn new() -> Self {
@@ -146,9 +146,9 @@ where
 
 impl<Vertex: WithID, Edge, Dir: Direction> Default for AdjacencyListGraph<Vertex, Edge, Dir>
 where
-    Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID + Debug,
-    Edge: Clone + Debug,
+    Vertex::IDType: Eq + Hash + PartialOrd + Copy,
+    Vertex: WithID,
+    Edge: Clone,
 {
     fn default() -> Self {
         Self::new()
@@ -157,9 +157,9 @@ where
 
 impl<Vertex, Edge> GraphBase for AdjacencyListGraph<Vertex, Edge, Directed>
 where
-    Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID + Debug,
-    Edge: Clone + Debug,
+    Vertex::IDType: Eq + Hash + PartialOrd + Copy,
+    Vertex: WithID,
+    Edge: Clone,
 {
     type Vertex = Vertex;
     type Edge = Edge;
@@ -293,9 +293,9 @@ where
 
 impl<Vertex, Edge> GraphBase for AdjacencyListGraph<Vertex, Edge, Undirected>
 where
-    Vertex::IDType: Eq + Hash + PartialOrd + Copy + Debug,
-    Vertex: WithID + Debug,
-    Edge: Clone + Debug,
+    Vertex::IDType: Eq + Hash + PartialOrd + Copy,
+    Vertex: WithID,
+    Edge: Clone,
 {
     type Vertex = Vertex;
     type Edge = Edge;
