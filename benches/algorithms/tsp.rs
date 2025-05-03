@@ -37,23 +37,71 @@ pub fn tsp(c: &mut Criterion) {
     // Brute-force
     let mut group = c.benchmark_group("Solve TSP (brute-force");
     for file in files {
-        let graph =
-            MatrixGraph::<_, _, Undirected>::from_hoever_file(file, TestVertex, |remaining| {
-                TestEdge(
-                    remaining[0]
-                        .parse()
-                        .expect("Graph file value must be a float"),
+        group.bench_function(
+            BenchmarkId::new("tsp_brute_force", file),
+            |b: &mut criterion::Bencher<'_>| {
+                let graph = MatrixGraph::<_, _, Undirected>::from_hoever_file(
+                    file,
+                    TestVertex,
+                    |remaining| {
+                        TestEdge(
+                            remaining[0]
+                                .parse()
+                                .expect("Graph file value must be a float"),
+                        )
+                    },
                 )
-            })
-            .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-        group.bench_function(BenchmarkId::new("tsp_brute_force", file), |b| {
-            b.iter(|| {
-                graph
-                    .tsp_brute_force()
-                    .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
-            });
-        });
+                b.iter(|| {
+                    graph
+                        .tsp_brute_force()
+                        .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
+                });
+            },
+        );
+    }
+    group.finish();
+
+    // TODO: B&B
+
+    // -------------- All test graphs --------------
+    let files = [
+        "resources/test_graphs/complete_undirected_weighted/K_15.txt",
+        "resources/test_graphs/complete_undirected_weighted/K_15e.txt",
+        "resources/test_graphs/complete_undirected_weighted/K_20.txt",
+        "resources/test_graphs/complete_undirected_weighted/K_30.txt",
+        "resources/test_graphs/complete_undirected_weighted/K_50.txt",
+        "resources/test_graphs/complete_undirected_weighted/K_70.txt",
+        "resources/test_graphs/complete_undirected_weighted/K_100.txt",
+    ];
+
+    // Nearest neighbor
+    let mut group = c.benchmark_group("Solve TSP (Nearest Neighbor");
+    for file in files {
+        group.bench_function(
+            BenchmarkId::new("tsp_nearest_neighbor", file),
+            |b: &mut criterion::Bencher<'_>| {
+                let graph = MatrixGraph::<_, _, Undirected>::from_hoever_file(
+                    file,
+                    TestVertex,
+                    |remaining| {
+                        TestEdge(
+                            remaining[0]
+                                .parse()
+                                .expect("Graph file value must be a float"),
+                        )
+                    },
+                )
+                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
+                b.iter(|| {
+                    graph
+                        .tsp_nearest_neighbor()
+                        .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
+                });
+            },
+        );
     }
     group.finish();
 }

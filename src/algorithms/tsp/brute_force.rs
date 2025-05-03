@@ -1,8 +1,6 @@
-use std::hash::Hash;
-
 use crate::{
     graph::{GraphBase, Path, WeightedEdge, WithID},
-    Graph, GraphError,
+    Graph,
 };
 
 use super::TspResult;

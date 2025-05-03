@@ -17,17 +17,17 @@ pub fn mst(c: &mut Criterion) {
     // Prim
     let mut group = c.benchmark_group("Build MST (Prim)");
     for file in files {
-        let graph =
-            ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
-                EdgeWithWeight::new(
-                    remaining[0]
-                        .parse()
-                        .expect("Graph file value must be a float"),
-                )
-            })
-            .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
-
         group.bench_function(BenchmarkId::new("mst_prim", file), |b| {
+            let graph =
+                ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+                    EdgeWithWeight::new(
+                        remaining[0]
+                            .parse()
+                            .expect("Graph file value must be a float"),
+                    )
+                })
+                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
             b.iter(|| {
                 graph
                     .mst_prim::<ListGraphBackend<_, _, Undirected>>(None)
@@ -40,17 +40,17 @@ pub fn mst(c: &mut Criterion) {
     // Kruskal
     let mut group = c.benchmark_group("Build MST (Kruskal)");
     for file in files {
-        let graph =
-            ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
-                EdgeWithWeight::new(
-                    remaining[0]
-                        .parse()
-                        .expect("Graph file value must be a float"),
-                )
-            })
-            .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
-
         group.bench_function(BenchmarkId::new("mst_kruskal", file), |b| {
+            let graph =
+                ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+                    EdgeWithWeight::new(
+                        remaining[0]
+                            .parse()
+                            .expect("Graph file value must be a float"),
+                    )
+                })
+                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
             b.iter(|| {
                 graph
                     .mst_kruskal::<ListGraphBackend<_, _, Undirected>>()
