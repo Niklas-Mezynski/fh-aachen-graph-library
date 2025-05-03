@@ -88,6 +88,13 @@ where
         self.vertices.get_mut(&vertex_id)
     }
 
+    fn get_edge_internal(&self, from_id: Vertex::IDType, to_id: Vertex::IDType) -> Option<&Edge> {
+        self.adjacency
+            .get(&from_id)
+            .and_then(|edges| edges.iter().find(|(to, _)| to == &to_id))
+            .map(|(_, edge)| edge)
+    }
+
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
     where
         Vertex: 'a,
@@ -220,6 +227,14 @@ where
 
     fn get_vertex_by_id_mut(&mut self, vertex_id: Vertex::IDType) -> Option<&mut Vertex> {
         self.get_vertex_by_id_mut(vertex_id)
+    }
+
+    fn get_edge(
+        &self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&Self::Edge> {
+        self.get_edge_internal(from_id, to_id)
     }
 
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
@@ -357,6 +372,14 @@ where
 
     fn get_vertex_by_id_mut(&mut self, vertex_id: Vertex::IDType) -> Option<&mut Vertex> {
         self.get_vertex_by_id_mut(vertex_id)
+    }
+
+    fn get_edge(
+        &self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&Self::Edge> {
+        self.get_edge_internal(from_id, to_id)
     }
 
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>

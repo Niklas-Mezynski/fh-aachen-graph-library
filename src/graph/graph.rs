@@ -86,6 +86,12 @@ where
                 vertex_id: <Self::Vertex as WithID>::IDType,
             ) -> Option<&mut Self::Vertex>;
 
+            fn get_edge(
+                &self,
+                from_id: <Self::Vertex as WithID>::IDType,
+                to_id: <Self::Vertex as WithID>::IDType,
+            ) -> Option<&Self::Edge>;
+
             fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
             where
                 Self::Vertex: 'a;
@@ -365,6 +371,58 @@ mod tests {
         fn get_weight(&self) -> Self::WeightType {
             self.weight
         }
+    }
+
+    #[rstest]
+    fn test_get_edge_directed(
+        #[values(
+            ListGraph::<MockVertex, MockWeightedEdge, Directed>::new(),
+            MatrixGraph::<MockVertex, MockWeightedEdge, Directed>::new()
+        )]
+        mut graph: impl GraphBase<
+            Vertex = MockVertex,
+            Edge = MockWeightedEdge,
+            Direction = Directed,
+        >,
+    ) {
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
+
+        graph.push_vertex(vertex1).unwrap();
+        graph.push_vertex(vertex2).unwrap();
+
+        graph
+            .push_edge(0, 1, MockWeightedEdge { weight: 42 })
+            .unwrap();
+
+        assert_eq!(graph.get_edge(0, 1).unwrap().get_weight(), 42);
+        assert_eq!(graph.get_edge(1, 0), None);
+    }
+
+    #[rstest]
+    fn test_get_edge_undirected(
+        #[values(
+            ListGraph::<MockVertex, MockWeightedEdge, Undirected>::new(),
+            MatrixGraph::<MockVertex, MockWeightedEdge, Undirected>::new()
+        )]
+        mut graph: impl GraphBase<
+            Vertex = MockVertex,
+            Edge = MockWeightedEdge,
+            Direction = Undirected,
+        >,
+    ) {
+        let vertex1 = MockVertex { id: 0 };
+        let vertex2 = MockVertex { id: 1 };
+
+        graph.push_vertex(vertex1).unwrap();
+        graph.push_vertex(vertex2).unwrap();
+
+        graph
+            .push_edge(0, 1, MockWeightedEdge { weight: 42 })
+            .unwrap();
+
+        assert_eq!(graph.get_edge(0, 1).unwrap().get_weight(), 42);
+        assert_eq!(graph.get_edge(1, 0).unwrap().get_weight(), 42);
     }
 
     #[rstest]

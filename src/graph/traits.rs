@@ -69,6 +69,13 @@ pub trait GraphBase: Default {
         vertex_id: <Self::Vertex as WithID>::IDType,
     ) -> Option<&mut Self::Vertex>;
 
+    /// Gets the edge data between two vertices
+    fn get_edge(
+        &self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&Self::Edge>;
+
     /// Get all vertices in the graph.
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
     where
