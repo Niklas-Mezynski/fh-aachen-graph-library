@@ -11,5 +11,6 @@ criterion_group!(
         targets =
         creation::graph_creation,
         count_connected_subgraphs::count_connected_subgraphs,
-        mst::mst
+        mst::mst,
+        tsp::tsp,
 );

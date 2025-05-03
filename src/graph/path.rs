@@ -28,6 +28,12 @@ where
     }
 }
 
+impl<VId, Edge> Default for Path<VId, Edge> {
+    fn default() -> Self {
+        Path { edges: Vec::new() }
+    }
+}
+
 impl<VId: std::fmt::Debug, Edge: std::fmt::Debug> std::fmt::Display for Path<VId, Edge> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, (from, to, edge)) in self.edges.iter().enumerate() {
