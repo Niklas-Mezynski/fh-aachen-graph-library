@@ -5,18 +5,15 @@ use crate::{
     Graph, GraphError,
 };
 
-type TspBruteForceResult<Backend> = Result<
-    Path<<<Backend as GraphBase>::Vertex as WithID>::IDType, <Backend as GraphBase>::Edge>,
-    GraphError<<<Backend as GraphBase>::Vertex as WithID>::IDType>,
->;
+use super::TspResult;
 
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
-    <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash,
+    <Backend::Vertex as WithID>::IDType: Copy,
     Backend::Edge: WeightedEdge + Clone,
 {
-    pub fn tsp_brute_force(&self) -> TspBruteForceResult<Backend> {
+    pub fn tsp_brute_force(&self) -> TspResult<Backend> {
         let mut vertices = self.get_all_vertices().map(|v| v.get_id());
 
         let start_v = match vertices.next() {
