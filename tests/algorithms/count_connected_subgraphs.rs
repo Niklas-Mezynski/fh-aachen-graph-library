@@ -17,7 +17,7 @@ fn count_connected_subgraphs(
     // Add other traversal types as needed
     traversal_type: TraversalType,
 ) {
-    let graph = ListGraph::<_, _, Undirected>::from_hoever_file(input_path)
+    let graph = ListGraph::<_, _, Undirected>::from_hoever_file_default(input_path)
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     // Count connected subgraphs

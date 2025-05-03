@@ -25,7 +25,7 @@ pub enum GraphError<VId> {
     IoError(#[from] std::io::Error),
 
     #[error("Parse error: {0}")]
-    ParseError(ParsingError),
+    ParseError(String),
 
     #[error("Graph operation failed: {0}")]
     OperationFailed(String),
@@ -44,12 +44,4 @@ impl<VId: Debug + Display + 'static> From<UnionFindError<VId>> for GraphError<VI
     fn from(value: UnionFindError<VId>) -> Self {
         Self::AlgorithmError(Box::new(value))
     }
-}
-
-#[derive(Error, Debug)]
-pub enum ParsingError {
-    #[error("Failed to parse integer: {0}")]
-    Int(#[from] std::num::ParseIntError),
-    #[error("Failed to parse float: {0}")]
-    Float(#[from] std::num::ParseFloatError),
 }

@@ -13,7 +13,7 @@ fn create_from_file_creates_all_vertices(
     #[case] input_path: &str,
     #[case] expected_vertices: usize,
 ) {
-    let graph = ListGraph::<_, _, Undirected>::from_hoever_file(input_path).unwrap();
+    let graph = ListGraph::<_, _, Undirected>::from_hoever_file_default(input_path).unwrap();
     let vertices = graph.get_all_vertices().collect::<Vec<_>>();
     assert_eq!(vertices.len(), expected_vertices);
 }

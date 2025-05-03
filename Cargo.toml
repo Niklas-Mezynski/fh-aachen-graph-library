@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 delegate = "0.13.3"
+num-traits = "0.2.19"
 rustc-hash = "2.1.1"
 thiserror = "2.0.12"
 

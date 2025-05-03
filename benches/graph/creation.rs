@@ -15,7 +15,7 @@ pub fn graph_creation(c: &mut Criterion) {
 
     for file in files {
         group.bench_with_input(BenchmarkId::new("from_file", file), &file, |b, &file| {
-            b.iter(|| ListGraph::<_, _, Undirected>::from_hoever_file(file).unwrap());
+            b.iter(|| ListGraph::<_, _, Undirected>::from_hoever_file_default(file).unwrap());
         });
     }
 

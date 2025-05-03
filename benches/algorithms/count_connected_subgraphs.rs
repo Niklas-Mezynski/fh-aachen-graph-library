@@ -18,7 +18,7 @@ pub fn count_connected_subgraphs(c: &mut Criterion) {
             c.benchmark_group(format!("Count Connected Subgraphs ({})", traversal_type));
 
         for file in files {
-            let graph = ListGraph::<_, _, Undirected>::from_hoever_file(file).unwrap();
+            let graph = ListGraph::<_, _, Undirected>::from_hoever_file_default(file).unwrap();
             group.bench_function(
                 BenchmarkId::new(format!("count_connected_{:?}", traversal_type), file),
                 |b| {
