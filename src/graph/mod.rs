@@ -13,4 +13,5 @@ mod traits;
 pub use direction::*;
 pub use graph::*;
 pub use graph_structs::{EdgeWeight, EdgeWithWeight, Vertex, VertexIDType};
+pub use path::Path;
 pub use traits::*;

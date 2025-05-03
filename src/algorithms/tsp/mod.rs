@@ -1,1 +1,1 @@
-pub mod bruteforce;
+pub mod brute_force;
