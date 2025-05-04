@@ -1,8 +1,20 @@
-use criterion::{BenchmarkId, Criterion};
+use criterion::{black_box, Criterion};
 use graph_library::{
-    graph::{EdgeWithWeight, ListGraphBackend},
+    graph::{EdgeWithWeight, ListGraphBackend, Vertex},
     ListGraph, Undirected,
 };
+
+/// Create a graph from a file for benchmarking purposes
+fn create_test_graph(file: &str) -> ListGraph<Vertex, EdgeWithWeight, Undirected> {
+    ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+        EdgeWithWeight::new(
+            remaining[0]
+                .parse()
+                .expect("Graph file value must be a float"),
+        )
+    })
+    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e))
+}
 
 pub fn mst(c: &mut Criterion) {
     let files = [
@@ -14,51 +26,47 @@ pub fn mst(c: &mut Criterion) {
         "resources/test_graphs/undirected_weighted/G_100_200.txt",
     ];
 
-    // Prim
-    let mut group = c.benchmark_group("Build MST (Prim)");
-    for file in files {
-        group.bench_function(BenchmarkId::new("mst_prim", file), |b| {
-            let graph =
-                ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
-                    EdgeWithWeight::new(
-                        remaining[0]
-                            .parse()
-                            .expect("Graph file value must be a float"),
-                    )
-                })
-                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    // Prim's algorithm benchmarks
+    {
+        let mut group = c.benchmark_group("mst_prim");
+        for file in &files {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
 
-            b.iter(|| {
-                graph
-                    .mst_prim::<ListGraphBackend<_, _, Undirected>>(None)
-                    .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
+                b.iter(|| {
+                    graph
+                        .mst_prim::<ListGraphBackend<_, _, Undirected>>(black_box(None))
+                        .unwrap_or_else(|e| panic!("Could not compute MST: {:?}", e));
+                });
             });
-        });
+        }
+        group.finish();
     }
-    group.finish();
 
-    // Kruskal
-    let mut group = c.benchmark_group("Build MST (Kruskal)");
-    for file in files {
-        group.bench_function(BenchmarkId::new("mst_kruskal", file), |b| {
-            let graph =
-                ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
-                    EdgeWithWeight::new(
-                        remaining[0]
-                            .parse()
-                            .expect("Graph file value must be a float"),
-                    )
-                })
-                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    // Kruskal's algorithm benchmarks
+    {
+        let mut group = c.benchmark_group("mst_kruskal");
+        for file in &files {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
 
-            b.iter(|| {
-                graph
-                    .mst_kruskal::<ListGraphBackend<_, _, Undirected>>()
-                    .unwrap_or_else(|e| panic!("Could not compute mst: {:?}", e));
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
+                b.iter(|| {
+                    black_box(
+                        graph
+                            .mst_kruskal::<ListGraphBackend<_, _, Undirected>>()
+                            .unwrap_or_else(|e| panic!("Could not compute MST: {:?}", e)),
+                    );
+                });
             });
-        });
-
-        // Add same test for group_kruskal
+        }
+        group.finish();
     }
-    group.finish();
 }

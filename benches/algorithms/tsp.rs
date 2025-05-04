@@ -1,4 +1,4 @@
-use criterion::{BenchmarkId, Criterion};
+use criterion::{black_box, Criterion};
 use graph_library::{
     graph::{MatrixGraph, WeightedEdge, WithID},
     Undirected,
@@ -26,47 +26,29 @@ impl WeightedEdge for TestEdge {
     }
 }
 
+/// Create a graph from a file for benchmarking purposes
+fn create_test_graph(file: &str) -> MatrixGraph<TestVertex, TestEdge, Undirected> {
+    MatrixGraph::<_, _, Undirected>::from_hoever_file(file, TestVertex, |remaining| {
+        TestEdge(
+            remaining[0]
+                .parse()
+                .expect("Graph file value must be a float"),
+        )
+    })
+    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e))
+}
+
 pub fn tsp(c: &mut Criterion) {
-    let files = [
+    // Files for exact algorithms (smaller instances)
+    let small_files = [
         "resources/test_graphs/complete_undirected_weighted/K_10.txt",
         "resources/test_graphs/complete_undirected_weighted/K_10e.txt",
         "resources/test_graphs/complete_undirected_weighted/K_12.txt",
         "resources/test_graphs/complete_undirected_weighted/K_12e.txt",
     ];
 
-    // Brute-force
-    let mut group = c.benchmark_group("Solve TSP (brute-force");
-    for file in files {
-        group.bench_function(
-            BenchmarkId::new("tsp_brute_force", file),
-            |b: &mut criterion::Bencher<'_>| {
-                let graph = MatrixGraph::<_, _, Undirected>::from_hoever_file(
-                    file,
-                    TestVertex,
-                    |remaining| {
-                        TestEdge(
-                            remaining[0]
-                                .parse()
-                                .expect("Graph file value must be a float"),
-                        )
-                    },
-                )
-                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
-
-                b.iter(|| {
-                    graph
-                        .tsp_brute_force(None)
-                        .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
-                });
-            },
-        );
-    }
-    group.finish();
-
-    // TODO: B&B
-
-    // -------------- All test graphs --------------
-    let files = [
+    // Files for heuristic algorithms (larger instances)
+    let large_files = [
         "resources/test_graphs/complete_undirected_weighted/K_15.txt",
         "resources/test_graphs/complete_undirected_weighted/K_15e.txt",
         "resources/test_graphs/complete_undirected_weighted/K_20.txt",
@@ -76,61 +58,72 @@ pub fn tsp(c: &mut Criterion) {
         "resources/test_graphs/complete_undirected_weighted/K_100.txt",
     ];
 
-    // Nearest neighbor
-    let mut group = c.benchmark_group("Solve TSP (Nearest Neighbor");
-    for file in files {
-        group.bench_function(
-            BenchmarkId::new("tsp_nearest_neighbor", file),
-            |b: &mut criterion::Bencher<'_>| {
-                let graph = MatrixGraph::<_, _, Undirected>::from_hoever_file(
-                    file,
-                    TestVertex,
-                    |remaining| {
-                        TestEdge(
-                            remaining[0]
-                                .parse()
-                                .expect("Graph file value must be a float"),
-                        )
-                    },
-                )
-                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    // Brute-force benchmarks (exact algorithm on small instances)
+    {
+        let mut group = c.benchmark_group("tsp_brute_force");
+        for file in small_files {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
 
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
                 b.iter(|| {
                     graph
-                        .tsp_nearest_neighbor(None)
-                        .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
+                        .tsp_brute_force(black_box(None))
+                        .unwrap_or_else(|e| panic!("Could not compute TSP: {:?}", e));
                 });
-            },
-        );
+            });
+        }
+        group.finish();
     }
-    group.finish();
 
-    // Double Tree
-    let mut group = c.benchmark_group("Solve TSP (Double Tree)");
-    for file in files {
-        group.bench_function(
-            BenchmarkId::new("tsp_double_tree", file),
-            |b: &mut criterion::Bencher<'_>| {
-                let graph = MatrixGraph::<_, _, Undirected>::from_hoever_file(
-                    file,
-                    TestVertex,
-                    |remaining| {
-                        TestEdge(
-                            remaining[0]
-                                .parse()
-                                .expect("Graph file value must be a float"),
-                        )
-                    },
-                )
-                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    // TODO: Branch & Bound algorithm benchmarks
 
+    // Nearest Neighbor benchmarks (heuristic algorithm on larger instances)
+    {
+        let mut group = c.benchmark_group("tsp_nearest_neighbor");
+        let all_files = small_files.iter().chain(large_files.iter());
+
+        for file in all_files {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
                 b.iter(|| {
                     graph
-                        .tsp_double_tree(None)
-                        .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
+                        .tsp_nearest_neighbor(black_box(None))
+                        .unwrap_or_else(|e| panic!("Could not compute TSP: {:?}", e));
                 });
-            },
-        );
+            });
+        }
+        group.finish();
     }
-    group.finish();
+
+    // Double Tree benchmarks (heuristic algorithm on larger instances)
+    {
+        let mut group = c.benchmark_group("tsp_double_tree");
+        let all_files = small_files.iter().chain(large_files.iter());
+
+        for file in all_files {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
+                b.iter(|| {
+                    graph
+                        .tsp_double_tree(black_box(None))
+                        .unwrap_or_else(|e| panic!("Could not compute TSP: {:?}", e));
+                });
+            });
+        }
+        group.finish();
+    }
 }

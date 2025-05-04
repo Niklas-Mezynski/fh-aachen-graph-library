@@ -1,5 +1,11 @@
-use criterion::{BenchmarkId, Criterion};
-use graph_library::{algorithms::iter::TraversalType, ListGraph, Undirected};
+use criterion::{black_box, Criterion};
+use graph_library::{algorithms::iter::TraversalType, graph::Vertex, ListGraph, Undirected};
+
+/// Create a graph from a file for benchmarking purposes
+fn create_test_graph(file: &str) -> ListGraph<Vertex, (), Undirected> {
+    ListGraph::<_, _, Undirected>::from_hoever_file_default(file)
+        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e))
+}
 
 pub fn count_connected_subgraphs(c: &mut Criterion) {
     let files = [
@@ -13,24 +19,24 @@ pub fn count_connected_subgraphs(c: &mut Criterion) {
 
     let traversals = [TraversalType::BFS, TraversalType::DFS];
 
-    for traversal_type in traversals {
-        let mut group =
-            c.benchmark_group(format!("Count Connected Subgraphs ({})", traversal_type));
+    for &traversal_type in &traversals {
+        let group_name = format!("count_connected_subgraphs_{}", traversal_type);
+        let mut group = c.benchmark_group(group_name);
 
-        for file in files {
-            group.bench_function(
-                BenchmarkId::new(format!("count_connected_{:?}", traversal_type), file),
-                |b| {
-                    let graph =
-                        ListGraph::<_, _, Undirected>::from_hoever_file_default(file).unwrap();
+        for file in &files {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
 
-                    b.iter(|| {
-                        graph
-                            .count_connected_subgraphs(Some(traversal_type))
-                            .unwrap()
-                    });
-                },
-            );
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
+                b.iter(|| {
+                    graph
+                        .count_connected_subgraphs(black_box(Some(traversal_type)))
+                        .unwrap_or_else(|e| panic!("Could not count connected components: {:?}", e))
+                });
+            });
         }
         group.finish();
     }

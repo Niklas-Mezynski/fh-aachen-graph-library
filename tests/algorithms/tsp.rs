@@ -1,35 +1,28 @@
-use graph_library::graph::{GraphBase, MatrixGraph, WeightedEdge, WithID};
+use graph_library::graph::{GraphBase, MatrixGraph};
 use graph_library::Undirected;
 use rstest::rstest;
 
+use super::{TestEdge, TestVertex};
+
+/// Enumeration of TSP algorithms for parametrized tests
 #[derive(Debug)]
-enum Algorithms {
+enum TspAlgorithm {
     BruteForce,
     BranchNBound,
     NearestNeighbor,
     DoubleTree,
 }
 
-#[derive(Debug, Clone)]
-struct TestVertex(pub usize);
-
-impl WithID for TestVertex {
-    type IDType = usize;
-
-    fn get_id(&self) -> Self::IDType {
-        self.0
-    }
-}
-
-#[derive(Debug, Clone)]
-struct TestEdge(pub f64);
-
-impl WeightedEdge for TestEdge {
-    type WeightType = f64;
-
-    fn get_weight(&self) -> Self::WeightType {
-        self.0
-    }
+/// Helper function to create a graph from a file for testing
+fn create_test_graph(path: &str) -> MatrixGraph<TestVertex, TestEdge, Undirected> {
+    MatrixGraph::<_, _, Undirected>::from_hoever_file(path, TestVertex, |remaining| {
+        TestEdge(
+            remaining[0]
+                .parse()
+                .expect("Graph file value must be a float"),
+        )
+    })
+    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e))
 }
 
 #[rstest]
@@ -40,29 +33,23 @@ impl WeightedEdge for TestEdge {
 fn tsp_finds_optimal_solution(
     #[case] input_path: &str,
     #[case] expected_optimal_cost: f64,
-    #[values(Algorithms::BruteForce)] algorithm: Algorithms,
+    #[values(TspAlgorithm::BruteForce)] algorithm: TspAlgorithm,
 ) {
-    let graph =
-        MatrixGraph::<_, _, Undirected>::from_hoever_file(input_path, TestVertex, |remaining| {
-            TestEdge(
-                remaining[0]
-                    .parse()
-                    .expect("Graph file value must be a float"),
-            )
-        })
-        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    let graph = create_test_graph(input_path);
 
     let optimal_path = match algorithm {
-        Algorithms::BruteForce => graph.tsp_brute_force(None),
-        Algorithms::BranchNBound => todo!(),
+        TspAlgorithm::BruteForce => graph.tsp_brute_force(None),
+        TspAlgorithm::BranchNBound => todo!("Branch and bound not yet implemented"),
         _ => unreachable!(),
     }
     .unwrap_or_else(|e| panic!("Could not compute tsp solution: {:?}", e));
 
     let total_cost = optimal_path.total_cost();
 
+    // Verify the path visits all vertices exactly once and returns to start
     assert_eq!(graph.vertex_count(), optimal_path.edges.len());
 
+    // Verify the cost is within tolerance of expected optimal
     assert!(
         (total_cost - expected_optimal_cost).abs() < 1e-2,
         "For graph {}, expected optimal TSP cost to be {}, but got {}",
@@ -99,21 +86,13 @@ fn tsp_finds_optimal_solution(
 fn tsp_finds_solution(
     #[case] input_path: &str,
     #[case] expected_optimal_cost: Option<f64>,
-    #[values(Algorithms::NearestNeighbor, Algorithms::DoubleTree)] algorithm: Algorithms,
+    #[values(TspAlgorithm::NearestNeighbor, TspAlgorithm::DoubleTree)] algorithm: TspAlgorithm,
 ) {
-    let graph =
-        MatrixGraph::<_, _, Undirected>::from_hoever_file(input_path, TestVertex, |remaining| {
-            TestEdge(
-                remaining[0]
-                    .parse()
-                    .expect("Graph file value must be a float"),
-            )
-        })
-        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+    let graph = create_test_graph(input_path);
 
     let (optimal_path, cost_to_check): (_, Option<f64>) = match algorithm {
-        Algorithms::NearestNeighbor => (graph.tsp_nearest_neighbor(None), None),
-        Algorithms::DoubleTree => (
+        TspAlgorithm::NearestNeighbor => (graph.tsp_nearest_neighbor(None), None),
+        TspAlgorithm::DoubleTree => (
             graph.tsp_double_tree(None),
             expected_optimal_cost.map(|v| v * 2_f64),
         ),
@@ -124,13 +103,16 @@ fn tsp_finds_solution(
 
     let total_cost = optimal_path.total_cost();
 
+    // Verify the path visits all vertices exactly once and returns to start
     assert_eq!(graph.vertex_count(), optimal_path.edges.len());
 
+    // Print information for small graph instances only to avoid cluttering test output
     if graph.vertex_count() <= 15 {
         println!("{}", optimal_path);
         println!("Total cost: {}", total_cost);
     }
 
+    // Check against expected costs if provided
     if let Some(expected_optimal_cost) = cost_to_check {
         assert!(
             total_cost <= expected_optimal_cost + 1e-2,
