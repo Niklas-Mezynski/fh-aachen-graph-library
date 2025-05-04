@@ -99,10 +99,7 @@ fn tsp_finds_optimal_solution(
 fn tsp_finds_solution(
     #[case] input_path: &str,
     #[case] expected_optimal_cost: Option<f64>,
-    #[values(
-        Algorithms::NearestNeighbor, 
-        // Algorithms::DoubleTree,
-    )] algorithm: Algorithms,
+    #[values(Algorithms::NearestNeighbor, Algorithms::DoubleTree)] algorithm: Algorithms,
 ) {
     let graph =
         MatrixGraph::<_, _, Undirected>::from_hoever_file(input_path, TestVertex, |remaining| {
@@ -116,10 +113,10 @@ fn tsp_finds_solution(
 
     let (optimal_path, cost_to_check): (_, Option<f64>) = match algorithm {
         Algorithms::NearestNeighbor => (graph.tsp_nearest_neighbor(), None),
-        // Algorithms::DoubleTree => (
-        //     graph.tsp_double_tree(),
-        //     expected_optimal_cost.map(|v| v * 2_f64),
-        // ),
+        Algorithms::DoubleTree => (
+            graph.tsp_double_tree(),
+            expected_optimal_cost.map(|v| v * 2_f64),
+        ),
         _ => unreachable!(),
     };
     let optimal_path =
@@ -131,12 +128,13 @@ fn tsp_finds_solution(
 
     if graph.vertex_count() <= 15 {
         println!("{}", optimal_path);
+        println!("Total cost: {}", total_cost);
     }
 
     if let Some(expected_optimal_cost) = cost_to_check {
         assert!(
-            (total_cost - expected_optimal_cost).abs() < 1e-2,
-            "For graph {}, expected optimal TSP cost to be {}, but got {}",
+            total_cost <= expected_optimal_cost + 1e-2,
+            "For graph {}, expected TSP cost to be at most {}, but got {}",
             input_path,
             expected_optimal_cost,
             total_cost

@@ -4,6 +4,7 @@ use crate::{
 };
 
 pub mod brute_force;
+pub mod double_tree;
 pub mod nearest_neighbor;
 
 pub type TspResult<Backend> = Result<
