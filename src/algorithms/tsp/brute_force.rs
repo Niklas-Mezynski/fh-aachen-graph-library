@@ -8,13 +8,14 @@ use super::TspResult;
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
-    <Backend::Vertex as WithID>::IDType: Copy,
+    <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
     Backend::Edge: WeightedEdge + Clone,
 {
-    pub fn tsp_brute_force(&self) -> TspResult<Backend> {
-        let mut vertices = self.get_all_vertices().map(|v| v.get_id());
-
-        let start_v = match vertices.next() {
+    pub fn tsp_brute_force(
+        &self,
+        start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
+    ) -> TspResult<Backend> {
+        let (start_v, vertices) = match self.get_initial_vertex(start_vertex_id) {
             Some(v) => v,
             None => return Ok(Path::default()),
         };

@@ -55,7 +55,7 @@ pub fn tsp(c: &mut Criterion) {
 
                 b.iter(|| {
                     graph
-                        .tsp_brute_force()
+                        .tsp_brute_force(None)
                         .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
                 });
             },
@@ -97,7 +97,36 @@ pub fn tsp(c: &mut Criterion) {
 
                 b.iter(|| {
                     graph
-                        .tsp_nearest_neighbor()
+                        .tsp_nearest_neighbor(None)
+                        .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
+                });
+            },
+        );
+    }
+    group.finish();
+
+    // Double Tree
+    let mut group = c.benchmark_group("Solve TSP (Double Tree)");
+    for file in files {
+        group.bench_function(
+            BenchmarkId::new("tsp_double_tree", file),
+            |b: &mut criterion::Bencher<'_>| {
+                let graph = MatrixGraph::<_, _, Undirected>::from_hoever_file(
+                    file,
+                    TestVertex,
+                    |remaining| {
+                        TestEdge(
+                            remaining[0]
+                                .parse()
+                                .expect("Graph file value must be a float"),
+                        )
+                    },
+                )
+                .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+
+                b.iter(|| {
+                    graph
+                        .tsp_double_tree(None)
                         .unwrap_or_else(|e| panic!("Could not compute tsp: {:?}", e));
                 });
             },

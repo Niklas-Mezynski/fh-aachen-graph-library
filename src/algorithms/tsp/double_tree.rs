@@ -1,7 +1,5 @@
 use std::hash::Hash;
 
-use rustc_hash::FxHashSet;
-
 use crate::{
     graph::{GraphBase, ListGraphBackend, Path, WeightedEdge, WithID},
     Graph,
@@ -18,12 +16,14 @@ where
     ListGraphBackend<Backend::Vertex, Backend::Edge, Backend::Direction>:
         GraphBase<Vertex = Backend::Vertex, Edge = Backend::Edge, Direction = Backend::Direction>,
 {
-    pub fn tsp_double_tree(&self) -> TspResult<Backend> {
+    pub fn tsp_double_tree(
+        &self,
+        start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
+    ) -> TspResult<Backend> {
         let mut path = Path::default();
 
         // Get random start vertex
-        let mut vertices = self.get_all_vertices().map(|v| v.get_id());
-        let start_v = match vertices.next() {
+        let (start_v, _) = match self.get_initial_vertex(start_vertex_id) {
             Some(v) => v,
             None => return Ok(Path::default()),
         };

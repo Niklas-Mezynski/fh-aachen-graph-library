@@ -53,7 +53,7 @@ fn tsp_finds_optimal_solution(
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     let optimal_path = match algorithm {
-        Algorithms::BruteForce => graph.tsp_brute_force(),
+        Algorithms::BruteForce => graph.tsp_brute_force(None),
         Algorithms::BranchNBound => todo!(),
         _ => unreachable!(),
     }
@@ -112,9 +112,9 @@ fn tsp_finds_solution(
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     let (optimal_path, cost_to_check): (_, Option<f64>) = match algorithm {
-        Algorithms::NearestNeighbor => (graph.tsp_nearest_neighbor(), None),
+        Algorithms::NearestNeighbor => (graph.tsp_nearest_neighbor(None), None),
         Algorithms::DoubleTree => (
-            graph.tsp_double_tree(),
+            graph.tsp_double_tree(None),
             expected_optimal_cost.map(|v| v * 2_f64),
         ),
         _ => unreachable!(),
