@@ -47,12 +47,20 @@ pub trait GraphBase: Default {
 
     // --- Basic Graph operations ---
     /// Adds a new vertex to the graph.
+    ///
+    /// # Errors
+    /// - `GraphError::DuplicateVertex`: when trying to add a vertex with an ID that already exists in the graph
     fn push_vertex(
         &mut self,
         vertex: Self::Vertex,
     ) -> Result<(), GraphError<<Self::Vertex as WithID>::IDType>>;
 
     /// Adds a new edge between two vertices.
+    /// In directed graphs, the order of the parameters matter. `from` is the starting vertex, `to` is the end vertex
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when either the source or target vertex ID does not exist
+    /// - `GraphError::DuplicateEdge`: when trying to add an edge that already exists
     fn push_edge(
         &mut self,
         from: <Self::Vertex as WithID>::IDType,
@@ -60,18 +68,25 @@ pub trait GraphBase: Default {
         edge: Self::Edge,
     ) -> Result<(), GraphError<<Self::Vertex as WithID>::IDType>>;
 
+    // --- Graph queries ---
+
     /// Returns whether the graph is a directed (true) or undirected (false) graph.
     fn is_directed(&self) -> bool;
 
-    // Graph queries
-
     /// Get vertex data by vertex id.
+    ///
+    /// Returns a reference to the vertex data for the given vertex ID or None if the vertex does not exist.
     fn get_vertex_by_id(
         &self,
         vertex_id: <Self::Vertex as WithID>::IDType,
     ) -> Option<&Self::Vertex>;
 
     /// Get a mutable reference to vertex data by vertex id.
+    ///
+    /// Returns a mutable reference to the vertex data for the given vertex ID or None if the vertex does not exist.
+    ///
+    /// # Errors
+    /// - `GraphError::VertexNotFound`: when the vertex does not exist
     fn get_vertex_by_id_mut(
         &mut self,
         vertex_id: <Self::Vertex as WithID>::IDType,
@@ -84,7 +99,7 @@ pub trait GraphBase: Default {
         to_id: <Self::Vertex as WithID>::IDType,
     ) -> Option<&Self::Edge>;
 
-    /// Get all vertices in the graph.
+    /// Get all vertices in the graph as an iterator.
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
     where
         Self::Vertex: 'a;
