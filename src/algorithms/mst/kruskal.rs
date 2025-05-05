@@ -16,11 +16,6 @@ where
     Backend::Vertex: Clone,
     <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash + Debug + Display + 'static,
     Backend::Edge: WeightedEdge + Clone,
-    // where
-    //     Backend: GraphBase<Vertex, Edge, Dir>,
-    //     Vertex: WithID + Clone + Debug,
-    //     Vertex::IDType: Copy + Eq + Hash + Display + Debug + 'static,
-    //     Edge: WeightedEdge + Clone + Debug,
 {
     /// Creates an MST using the Kruskal's algorithm.
     ///

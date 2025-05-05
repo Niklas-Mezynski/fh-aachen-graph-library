@@ -15,6 +15,21 @@ where
     <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash,
     Backend::Edge: WeightedEdge + Clone,
 {
+    /// Finds a path with a TSP solution using the nearest neighbor algorithm.
+    ///
+    /// There is no guarantee for the quality of the solution.
+    ///
+    /// # Requirements
+    /// - `self` must be a fully connected graph with weights assigned to all edges.
+    ///
+    /// # Parameters
+    /// - `start_vertex_id`: Optional ID of the vertex to start the TSP from. If `None`, a default starting vertex is chosen.
+    ///
+    /// # Returns
+    /// - Returns a `TspResult<Backend>` containing the optimal path found, or an empty path if the graph is empty.
+    ///
+    /// # Panics
+    /// - May panic if the graph is not fully connected.
     pub fn tsp_nearest_neighbor(
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,

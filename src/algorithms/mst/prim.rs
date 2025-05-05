@@ -14,6 +14,9 @@ where
     <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash,
     Backend::Edge: WeightedEdge + Clone,
 {
+    /// Creates an MST using the Prim's algorithm.
+    ///
+    /// Returns the MST as a new graph
     pub fn mst_prim<OutputBackend>(
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,

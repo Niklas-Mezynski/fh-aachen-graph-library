@@ -11,6 +11,19 @@ where
     <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
     Backend::Edge: WeightedEdge + Clone,
 {
+    /// Finds a path with the optimal TSP solution using a simple brute force approach.
+    ///
+    /// # Requirements
+    /// - `self` must be a fully connected graph with weights assigned to all edges.
+    ///
+    /// # Parameters
+    /// - `start_vertex_id`: Optional ID of the vertex to start the TSP from. If `None`, a default starting vertex is chosen.
+    ///
+    /// # Returns
+    /// - Returns a `TspResult<Backend>` containing the optimal path found, or an empty path if the graph is empty.
+    ///
+    /// # Panics
+    /// - May panic if the graph is not fully connected.
     pub fn tsp_brute_force(
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,

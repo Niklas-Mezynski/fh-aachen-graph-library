@@ -3,6 +3,7 @@ use crate::{
     GraphError,
 };
 
+pub mod branch_and_bound;
 pub mod brute_force;
 pub mod double_tree;
 pub mod nearest_neighbor;

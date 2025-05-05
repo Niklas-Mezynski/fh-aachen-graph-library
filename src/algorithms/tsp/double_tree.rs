@@ -16,6 +16,22 @@ where
     ListGraphBackend<Backend::Vertex, Backend::Edge, Backend::Direction>:
         GraphBase<Vertex = Backend::Vertex, Edge = Backend::Edge, Direction = Backend::Direction>,
 {
+    /// Finds a path with a TSP solution using the double tree algorithm.
+    /// It constructs an MST and runs a depth-first search on it to construct the Hamilton-tour.
+    ///
+    /// The solution is within twice the optimal solution cost.
+    ///
+    /// # Requirements
+    /// - `self` must be a fully connected graph with weights assigned to all edges.
+    ///
+    /// # Parameters
+    /// - `start_vertex_id`: Optional ID of the vertex to start the TSP from. If `None`, a default starting vertex is chosen.
+    ///
+    /// # Returns
+    /// - Returns a `TspResult<Backend>` containing the optimal path found, or an empty path if the graph is empty.
+    ///
+    /// # Panics
+    /// - May panic if the graph is not fully connected.
     pub fn tsp_double_tree(
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,

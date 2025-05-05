@@ -8,7 +8,7 @@ use super::{TestEdge, TestVertex};
 #[derive(Debug)]
 enum TspAlgorithm {
     BruteForce,
-    BranchNBound,
+    BranchAndBound,
     NearestNeighbor,
     DoubleTree,
 }
@@ -33,13 +33,13 @@ fn create_test_graph(path: &str) -> MatrixGraph<TestVertex, TestEdge, Undirected
 fn tsp_finds_optimal_solution(
     #[case] input_path: &str,
     #[case] expected_optimal_cost: f64,
-    #[values(TspAlgorithm::BruteForce)] algorithm: TspAlgorithm,
+    #[values(TspAlgorithm::BruteForce, TspAlgorithm::BranchAndBound)] algorithm: TspAlgorithm,
 ) {
     let graph = create_test_graph(input_path);
 
     let optimal_path = match algorithm {
         TspAlgorithm::BruteForce => graph.tsp_brute_force(None),
-        TspAlgorithm::BranchNBound => todo!("Branch and bound not yet implemented"),
+        TspAlgorithm::BranchAndBound => graph.tsp_branch_and_bound(None),
         _ => unreachable!(),
     }
     .unwrap_or_else(|e| panic!("Could not compute tsp solution: {:?}", e));
