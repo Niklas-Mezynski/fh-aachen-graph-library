@@ -1,6 +1,10 @@
+use std::{hash::Hash, ops::Add};
+
+use rustc_hash::FxHashSet;
+
 use crate::{
     graph::{GraphBase, Path, WeightedEdge, WithID},
-    Graph,
+    Graph, GraphError,
 };
 
 use super::TspResult;
@@ -8,8 +12,10 @@ use super::TspResult;
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
-    <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
+    <Backend::Vertex as WithID>::IDType: Copy + Hash + Eq,
     Backend::Edge: WeightedEdge + Clone,
+    <Backend::Edge as WeightedEdge>::WeightType:
+        Add<Output = <Backend::Edge as WeightedEdge>::WeightType> + Clone,
 {
     /// Finds a path with the optimal TSP solution using a branch and bound brute force approach.
     ///
@@ -28,26 +34,112 @@ where
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
     ) -> TspResult<Backend> {
-        let (start_v, vertices) = match self.get_initial_vertex(start_vertex_id) {
+        let (start_v, _) = match self.get_initial_vertex(start_vertex_id) {
             Some(v) => v,
             None => return Ok(Path::default()),
         };
 
-        let mut remaining_vertices = vertices.collect::<Vec<_>>();
-        todo!()
+        let mut best_path = None;
+        let mut initial_path = vec![start_v];
+        let initial_cost = <Backend::Edge as WeightedEdge>::WeightType::default();
+        let mut visited = FxHashSet::default();
+        visited.insert(start_v);
+
+        self.branch_and_bound(
+            start_v,
+            &mut initial_path,
+            initial_cost,
+            &mut visited,
+            &mut best_path,
+        );
+
+        match best_path {
+            Some(best_path) => {
+                // Construct the Path object
+                let mut path = Path::default();
+
+                for window in best_path.1.windows(2) {
+                    let from_v = window[0];
+                    let to_v = window[1];
+                    let edge = self.get_edge(from_v, to_v).unwrap().clone();
+                    path.push(from_v, to_v, edge);
+                }
+                Ok(path)
+            }
+            None => Err(GraphError::AlgorithmError(
+                Box::<dyn std::error::Error>::from(
+                    "Could not solve TSP, not optimal cost was found",
+                ),
+            )),
+        }
     }
 
+    #[allow(clippy::type_complexity)]
     /// Recursive function to go through the different permutations
     fn branch_and_bound(
         &self,
-        start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
-    ) -> TspResult<Backend> {
-        let (start_v, vertices) = match self.get_initial_vertex(start_vertex_id) {
-            Some(v) => v,
-            None => return Ok(Path::default()),
-        };
+        current_v: <Backend::Vertex as WithID>::IDType,
+        current_path: &mut Vec<<Backend::Vertex as WithID>::IDType>,
+        current_cost: <Backend::Edge as WeightedEdge>::WeightType,
+        visited: &mut FxHashSet<<Backend::Vertex as WithID>::IDType>,
+        current_best: &mut Option<(
+            <Backend::Edge as WeightedEdge>::WeightType,
+            Vec<<Backend::Vertex as WithID>::IDType>,
+        )>,
+    ) {
+        if current_path.len() == self.vertex_count() {
+            // Alle Knoten besucht, Tour schließen
+            let edge_cost = self
+                .get_edge(current_v, current_path[0])
+                .unwrap()
+                .get_weight();
+            let total_cost = current_cost + edge_cost;
 
-        let mut remaining_vertices = vertices.collect::<Vec<_>>();
-        todo!()
+            match current_best {
+                Some((best_cost, best_path)) if &total_cost < best_cost => {
+                    // Startknoten zum Ende der Tour hinzufügen
+                    let mut path = current_path.to_owned();
+                    path.push(current_path[0]);
+                    *best_cost = total_cost;
+                    *best_path = path;
+                }
+                None => {
+                    // Startknoten zum Ende der Tour hinzufügen
+                    let mut path = current_path.to_owned();
+                    path.push(current_path[0]);
+                    *current_best = Some((total_cost, path));
+                }
+                _ => {}
+            }
+
+            // Diese Permutation "abschließen"
+            return;
+        }
+
+        // Für alle Nachbarn des aktuellen vertex
+        for next in self.get_adjacent_vertices(current_v).map(|v| v.get_id())
+        // .filter(|v| !visited.contains(v))
+        {
+            // Bereits besucht -> skip
+            if visited.contains(&next) {
+                continue;
+            }
+
+            let edge_cost = self.get_edge(current_v, next).unwrap().get_weight();
+            let new_cost = current_cost.clone() + edge_cost;
+
+            // Prüfen ob es sich noch lohnt, diese Tour weiter zu erkunden
+            if current_best.is_some() && new_cost >= current_best.as_ref().unwrap().0 {
+                // Wenn bereits teurer -> Abbruch
+                continue;
+            }
+
+            // Rekursiv weiter erkunden
+            visited.insert(next);
+            current_path.push(next);
+            self.branch_and_bound(next, current_path, new_cost, visited, current_best);
+            current_path.pop();
+            visited.remove(&next);
+        }
     }
 }

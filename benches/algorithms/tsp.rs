@@ -40,15 +40,11 @@ fn create_test_graph(file: &str) -> MatrixGraph<TestVertex, TestEdge, Undirected
 
 pub fn tsp(c: &mut Criterion) {
     // Files for exact algorithms (smaller instances)
-    let small_files = [
+    let files = [
         "resources/test_graphs/complete_undirected_weighted/K_10.txt",
         "resources/test_graphs/complete_undirected_weighted/K_10e.txt",
         "resources/test_graphs/complete_undirected_weighted/K_12.txt",
         "resources/test_graphs/complete_undirected_weighted/K_12e.txt",
-    ];
-
-    // Files for heuristic algorithms (larger instances)
-    let large_files = [
         "resources/test_graphs/complete_undirected_weighted/K_15.txt",
         "resources/test_graphs/complete_undirected_weighted/K_15e.txt",
         "resources/test_graphs/complete_undirected_weighted/K_20.txt",
@@ -61,7 +57,7 @@ pub fn tsp(c: &mut Criterion) {
     // Brute-force benchmarks (exact algorithm on small instances)
     {
         let mut group = c.benchmark_group("tsp_brute_force");
-        for file in small_files {
+        for file in files[0..4].iter() {
             let file_name = std::path::Path::new(file)
                 .file_name()
                 .unwrap_or_default()
@@ -79,14 +75,32 @@ pub fn tsp(c: &mut Criterion) {
         group.finish();
     }
 
-    // TODO: Branch & Bound algorithm benchmarks
+    // Branch & Bound algorithm benchmarks (exact algorithm on smaller instances)
+    {
+        let mut group = c.benchmark_group("tsp_branch_and_bound");
+        for file in files[0..4].iter() {
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+
+            group.bench_function(file_name, |b| {
+                let graph = create_test_graph(file);
+                b.iter(|| {
+                    graph
+                        .tsp_branch_and_bound(black_box(None))
+                        .unwrap_or_else(|e| panic!("Could not compute TSP: {:?}", e));
+                });
+            });
+        }
+        group.finish();
+    }
 
     // Nearest Neighbor benchmarks (heuristic algorithm on larger instances)
     {
         let mut group = c.benchmark_group("tsp_nearest_neighbor");
-        let all_files = small_files.iter().chain(large_files.iter());
 
-        for file in all_files {
+        for file in files {
             let file_name = std::path::Path::new(file)
                 .file_name()
                 .unwrap_or_default()
@@ -107,9 +121,8 @@ pub fn tsp(c: &mut Criterion) {
     // Double Tree benchmarks (heuristic algorithm on larger instances)
     {
         let mut group = c.benchmark_group("tsp_double_tree");
-        let all_files = small_files.iter().chain(large_files.iter());
 
-        for file in all_files {
+        for file in files {
             let file_name = std::path::Path::new(file)
                 .file_name()
                 .unwrap_or_default()
