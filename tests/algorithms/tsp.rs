@@ -1,5 +1,6 @@
 use graph_library::graph::{GraphBase, MatrixGraph};
 use graph_library::Undirected;
+use itertools::Itertools;
 use rstest::rstest;
 
 use super::{TestEdge, TestVertex};
@@ -46,8 +47,23 @@ fn tsp_finds_optimal_solution(
 
     let total_cost = optimal_path.total_cost();
 
-    // Verify the path visits all vertices exactly once and returns to start
+    // Verify the path visits all vertices exactly once
     assert_eq!(graph.vertex_count(), optimal_path.len());
+
+    assert_eq!(
+        optimal_path
+            .edges()
+            .map(|(from, _, _)| from)
+            .unique()
+            .count(),
+        graph.vertex_count(),
+        "Path should visit each vertex exactly once"
+    );
+    assert_eq!(
+        optimal_path.edges().map(|(_, to, _)| to).unique().count(),
+        graph.vertex_count(),
+        "Path should visit each vertex exactly once"
+    );
 
     // Verify the cost is within tolerance of expected optimal
     assert!(
@@ -103,8 +119,23 @@ fn tsp_finds_solution(
 
     let total_cost = optimal_path.total_cost();
 
-    // Verify the path visits all vertices exactly once and returns to start
+    // Verify the path visits all vertices exactly once
     assert_eq!(graph.vertex_count(), optimal_path.len());
+
+    assert_eq!(
+        optimal_path
+            .edges()
+            .map(|(from, _, _)| from)
+            .unique()
+            .count(),
+        graph.vertex_count(),
+        "Path should visit each vertex exactly once"
+    );
+    assert_eq!(
+        optimal_path.edges().map(|(_, to, _)| to).unique().count(),
+        graph.vertex_count(),
+        "Path should visit each vertex exactly once"
+    );
 
     // Print information for small graph instances only to avoid cluttering test output
     if graph.vertex_count() <= 15 {
