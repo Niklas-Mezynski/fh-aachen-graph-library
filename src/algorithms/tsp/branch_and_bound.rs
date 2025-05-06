@@ -13,7 +13,7 @@ where
     <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
     Backend::Edge: WeightedEdge + Clone,
     <Backend::Edge as WeightedEdge>::WeightType:
-        Add<Output = <Backend::Edge as WeightedEdge>::WeightType> + Clone,
+        Add<Output = <Backend::Edge as WeightedEdge>::WeightType> + Copy,
 {
     /// Finds a path with the optimal TSP solution using a branch and bound brute force approach.
     ///
@@ -121,7 +121,7 @@ where
                 .get_edge(current_v, remaining[next_i])
                 .unwrap()
                 .get_weight();
-            let new_cost = current_cost.clone() + edge_cost;
+            let new_cost = current_cost + edge_cost;
 
             // Prüfen ob es sich noch lohnt, diese Tour weiter zu erkunden
             if current_best.is_some() && new_cost >= current_best.as_ref().unwrap().0 {
