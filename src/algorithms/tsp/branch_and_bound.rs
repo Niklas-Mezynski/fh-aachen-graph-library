@@ -117,16 +117,16 @@ where
         // Wir iterieren durch alle Indizes des nicht besuchten Knoten
         let last_remaining_idx = remaining.len() - 1;
         for next_i in 0..=last_remaining_idx {
-            let edge_cost = self
-                .get_edge(current_v, remaining[next_i])
-                .unwrap()
-                .get_weight();
+            let next = remaining[next_i];
+            let edge_cost = self.get_edge(current_v, next).unwrap().get_weight();
             let new_cost = current_cost + edge_cost;
 
             // Prüfen ob es sich noch lohnt, diese Tour weiter zu erkunden
-            if current_best.is_some() && new_cost >= current_best.as_ref().unwrap().0 {
-                // Wenn bereits teurer -> Abbruch
-                continue;
+            if let Some((best_cost, _)) = current_best {
+                if &new_cost >= best_cost {
+                    // Wenn bereits teurer -> Abbruch
+                    continue;
+                }
             }
 
             // Wir untersuchen nun den Knoten an Position i
