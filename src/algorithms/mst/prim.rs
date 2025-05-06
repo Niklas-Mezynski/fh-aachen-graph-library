@@ -39,7 +39,7 @@ where
             Some(start_vertex_id) => {
                 let v0 = self
                     .get_vertex_by_id(start_vertex_id)
-                    .ok_or_else(|| GraphError::VertexNotFound(start_vertex_id))?;
+                    .ok_or(GraphError::VertexNotFound(start_vertex_id))?;
 
                 let mut remaining_vertices = self
                     .get_all_vertices()

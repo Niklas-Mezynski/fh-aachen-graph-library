@@ -51,11 +51,11 @@ where
         );
 
         match best_path {
-            Some(best_path) => {
+            Some((_, best_path)) => {
                 // Construct the Path object
                 let mut path = Path::default();
 
-                for window in best_path.1.windows(2) {
+                for window in best_path.windows(2) {
                     let from_v = window[0];
                     let to_v = window[1];
                     let edge = self.get_edge(from_v, to_v).unwrap().clone();
@@ -64,9 +64,7 @@ where
                 Ok(path)
             }
             None => Err(GraphError::AlgorithmError(
-                Box::<dyn std::error::Error>::from(
-                    "Could not solve TSP, not optimal cost was found",
-                ),
+                "Could not solve TSP, not optimal cost was found".to_string(),
             )),
         }
     }

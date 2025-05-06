@@ -48,7 +48,9 @@ where
         // Put all vertices in a Union-Find struct
         let mut union_find = UnionFind::new();
         for v in self.get_all_vertices() {
-            union_find.make_set(v.get_id())?;
+            union_find
+                .make_set(v.get_id())
+                .map_err(|e| GraphError::AlgorithmError(e.to_string()))?;
             mst_graph.push_vertex(v.clone())?;
         }
 
@@ -57,7 +59,9 @@ where
         // Pop each edge in edges (lowest first):
         while let Some((from, to, _weight, edge)) = edges.pop() {
             //  if adding e to MST would not create a circle:
-            let was_merged = union_find.union(&from, &to)?;
+            let was_merged = union_find
+                .union(&from, &to)
+                .map_err(|e| GraphError::AlgorithmError(e.to_string()))?;
 
             if was_merged {
                 mst_graph.push_edge(from, to, edge.to_owned())?;

@@ -1,6 +1,6 @@
 // Union-Find-Struct for detecting circles in a graph
 
-use std::{fmt::Debug, hash::Hash};
+use std::hash::Hash;
 
 use rustc_hash::FxHashMap;
 use thiserror::Error;

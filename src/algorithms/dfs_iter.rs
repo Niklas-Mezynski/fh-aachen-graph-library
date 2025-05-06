@@ -26,7 +26,7 @@ where
     ) -> Result<Self, GraphError<<Backend::Vertex as WithID>::IDType>> {
         graph
             .get_vertex_by_id(start_vertex)
-            .ok_or_else(|| GraphError::VertexNotFound(start_vertex))?;
+            .ok_or(GraphError::VertexNotFound(start_vertex))?;
 
         let stack = vec![start_vertex];
 
