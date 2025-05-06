@@ -1,4 +1,4 @@
-use std::{hash::Hash, ops::Add};
+use std::ops::Add;
 
 use crate::{
     graph::{GraphBase, Path, WeightedEdge, WithID},

@@ -1,6 +1,4 @@
-use std::{hash::Hash, ops::Add};
-
-use rustc_hash::FxHashSet;
+use std::ops::Add;
 
 use crate::{
     graph::{GraphBase, Path, WeightedEdge, WithID},
@@ -12,7 +10,7 @@ use super::TspResult;
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
-    <Backend::Vertex as WithID>::IDType: Copy + Hash + Eq,
+    <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
     Backend::Edge: WeightedEdge + Clone,
     <Backend::Edge as WeightedEdge>::WeightType:
         Add<Output = <Backend::Edge as WeightedEdge>::WeightType> + Clone,
@@ -34,7 +32,7 @@ where
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
     ) -> TspResult<Backend> {
-        let (start_v, _) = match self.get_initial_vertex(start_vertex_id) {
+        let (start_v, remaining_vertices) = match self.get_initial_vertex(start_vertex_id) {
             Some(v) => v,
             None => return Ok(Path::default()),
         };
@@ -42,14 +40,13 @@ where
         let mut best_path = None;
         let mut initial_path = vec![start_v];
         let initial_cost = <Backend::Edge as WeightedEdge>::WeightType::default();
-        let mut visited = FxHashSet::default();
-        visited.insert(start_v);
+        let mut remaining = remaining_vertices.collect::<Vec<_>>();
 
         self.branch_and_bound(
             start_v,
             &mut initial_path,
             initial_cost,
-            &mut visited,
+            &mut remaining,
             &mut best_path,
         );
 
@@ -81,7 +78,7 @@ where
         current_v: <Backend::Vertex as WithID>::IDType,
         current_path: &mut Vec<<Backend::Vertex as WithID>::IDType>,
         current_cost: <Backend::Edge as WeightedEdge>::WeightType,
-        visited: &mut FxHashSet<<Backend::Vertex as WithID>::IDType>,
+        remaining: &mut Vec<<Backend::Vertex as WithID>::IDType>,
         current_best: &mut Option<(
             <Backend::Edge as WeightedEdge>::WeightType,
             Vec<<Backend::Vertex as WithID>::IDType>,
@@ -116,14 +113,15 @@ where
             return;
         }
 
-        // Für alle Nachbarn des aktuellen vertex
-        for next in self.get_adjacent_vertices(current_v).map(|v| v.get_id())
-        // .filter(|v| !visited.contains(v))
-        {
-            // Bereits besucht -> skip
-            if visited.contains(&next) {
-                continue;
-            }
+        // Für alle noch nicht besuchten Knoten
+        // Wir iterieren durch alle Indizes des nicht besuchten Knoten
+        let last_remaining_idx = remaining.len() - 1;
+        for next_i in 0..=last_remaining_idx {
+            // Wir untersuchen nun den Knoten an Position i
+            // Dazu swappen wir ihn an die letzte Position des Vecs, damit wir ihn per `.pop()` entfernen können.
+            // `swap()` und `pop()` sind beide O(1)
+            remaining.swap(next_i, last_remaining_idx);
+            let next = remaining.pop().unwrap();
 
             let edge_cost = self.get_edge(current_v, next).unwrap().get_weight();
             let new_cost = current_cost.clone() + edge_cost;
@@ -131,15 +129,20 @@ where
             // Prüfen ob es sich noch lohnt, diese Tour weiter zu erkunden
             if current_best.is_some() && new_cost >= current_best.as_ref().unwrap().0 {
                 // Wenn bereits teurer -> Abbruch
+                // State vor rekursivem Aufruf wiederherstellen
+                remaining.push(next);
+                remaining.swap(next_i, last_remaining_idx);
                 continue;
             }
 
             // Rekursiv weiter erkunden
-            visited.insert(next);
             current_path.push(next);
-            self.branch_and_bound(next, current_path, new_cost, visited, current_best);
+            self.branch_and_bound(next, current_path, new_cost, remaining, current_best);
+
+            // State vor rekursivem Aufruf wiederherstellen
             current_path.pop();
-            visited.remove(&next);
+            remaining.push(next);
+            remaining.swap(next_i, last_remaining_idx);
         }
     }
 }
