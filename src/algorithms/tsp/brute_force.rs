@@ -1,6 +1,10 @@
+use std::{hash::Hash, ops::Add};
+
+use rustc_hash::FxHashSet;
+
 use crate::{
     graph::{GraphBase, Path, WeightedEdge, WithID},
-    Graph,
+    Graph, GraphError,
 };
 
 use super::TspResult;
@@ -8,8 +12,10 @@ use super::TspResult;
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
-    <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
+    <Backend::Vertex as WithID>::IDType: Copy + Hash + Eq,
     Backend::Edge: WeightedEdge + Clone,
+    <Backend::Edge as WeightedEdge>::WeightType:
+        Add<Output = <Backend::Edge as WeightedEdge>::WeightType> + Clone,
 {
     /// Finds a path with the optimal TSP solution using a simple brute force approach.
     ///
@@ -28,87 +34,99 @@ where
         &self,
         start_vertex_id: Option<<Backend::Vertex as WithID>::IDType>,
     ) -> TspResult<Backend> {
-        let (start_v, vertices) = match self.get_initial_vertex(start_vertex_id) {
+        let (start_v, remaining_vertices) = match self.get_initial_vertex(start_vertex_id) {
             Some(v) => v,
             None => return Ok(Path::default()),
         };
 
-        let mut vertices = vertices.collect::<Vec<_>>();
+        let mut best_path = None;
+        let mut initial_path = vec![start_v];
+        let initial_cost = <Backend::Edge as WeightedEdge>::WeightType::default();
+        let mut remaining = remaining_vertices.collect::<FxHashSet<_>>();
 
-        let mut cheapest_cost = None;
-        let mut cheapest_path = None;
-        heap_permutations(&mut vertices, |permutation| {
-            let mut path_vertices = vec![start_v];
-            let mut total_cost = <Backend::Edge as WeightedEdge>::WeightType::default();
-            let mut current_v = start_v;
-            let mut valid = true;
+        self.brute_force(
+            start_v,
+            &mut initial_path,
+            initial_cost,
+            &mut remaining,
+            &mut best_path,
+        );
 
-            for &next_v in permutation {
-                match self.get_edge(current_v, next_v) {
-                    Some(edge) => {
-                        total_cost += edge.get_weight();
-                        path_vertices.push(next_v);
-                        current_v = next_v;
-                    }
-                    None => {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-
-            // Return to start
-            if valid {
-                if let Some(edge) = self.get_edge(current_v, start_v) {
-                    total_cost += edge.get_weight();
-
-                    if cheapest_cost.is_none() || &total_cost < cheapest_cost.as_ref().unwrap() {
-                        cheapest_cost = Some(total_cost);
-
-                        path_vertices.push(start_v);
-                        cheapest_path = Some(path_vertices);
-                    }
-                }
-            }
-        });
-
-        Ok(cheapest_path
-            .map(|path_vertices| {
-                let mut current_v = *path_vertices.first().unwrap();
+        match best_path {
+            Some(best_path) => {
+                // Construct the Path object
                 let mut path = Path::default();
-                for next_v in path_vertices.into_iter().skip(1) {
-                    path.push(
-                        current_v,
-                        next_v,
-                        self.get_edge(current_v, next_v).unwrap().clone(),
-                    );
-                    current_v = next_v;
+
+                for window in best_path.1.windows(2) {
+                    let from_v = window[0];
+                    let to_v = window[1];
+                    let edge = self.get_edge(from_v, to_v).unwrap().clone();
+                    path.push(from_v, to_v, edge);
                 }
-                path
-            })
-            .unwrap_or_default())
-    }
-}
-
-fn heap_permutations<T, F: FnMut(&[T])>(a: &mut [T], mut f: F) {
-    let n = a.len();
-    let mut c = vec![0; n];
-    f(a); // erste Permutation
-
-    let mut i = 0;
-    while i < n {
-        if c[i] < i {
-            if i % 2 == 0 {
-                a.swap(0, i);
-            } else {
-                a.swap(c[i], i);
+                Ok(path)
             }
-            f(a);
-            c[i] += 1;
-            i = 0;
-        } else {
-            c[i] = 0;
-            i += 1;
+            None => Err(GraphError::AlgorithmError(
+                Box::<dyn std::error::Error>::from(
+                    "Could not solve TSP, not optimal cost was found",
+                ),
+            )),
+        }
+    }
+
+    #[allow(clippy::type_complexity)]
+    /// Recursive function to go through the different permutations
+    fn brute_force(
+        &self,
+        current_v: <Backend::Vertex as WithID>::IDType,
+        current_path: &mut Vec<<Backend::Vertex as WithID>::IDType>,
+        current_cost: <Backend::Edge as WeightedEdge>::WeightType,
+        remaining: &mut FxHashSet<<Backend::Vertex as WithID>::IDType>,
+        current_best: &mut Option<(
+            <Backend::Edge as WeightedEdge>::WeightType,
+            Vec<<Backend::Vertex as WithID>::IDType>,
+        )>,
+    ) {
+        if current_path.len() == self.vertex_count() {
+            // Alle Knoten besucht, Tour schließen
+            let edge_cost = self
+                .get_edge(current_v, current_path[0])
+                .unwrap()
+                .get_weight();
+            let total_cost = current_cost + edge_cost;
+
+            match current_best {
+                Some((best_cost, best_path)) if &total_cost < best_cost => {
+                    // Startknoten zum Ende der Tour hinzufügen
+                    let mut path = current_path.to_owned();
+                    path.push(current_path[0]);
+                    *best_cost = total_cost;
+                    *best_path = path;
+                }
+                None => {
+                    // Startknoten zum Ende der Tour hinzufügen
+                    let mut path = current_path.to_owned();
+                    path.push(current_path[0]);
+                    *current_best = Some((total_cost, path));
+                }
+                _ => {}
+            }
+
+            // Diese Permutation "abschließen"
+            return;
+        }
+
+        // Für alle noch nicht besuchten Knoten
+        let next_vertices: Vec<_> = remaining.iter().cloned().collect();
+        for next in next_vertices {
+            let edge_cost = self.get_edge(current_v, next).unwrap().get_weight();
+            let new_cost = current_cost.clone() + edge_cost;
+
+            // Rekursiv weiter erkunden
+            remaining.remove(&next);
+            current_path.push(next);
+            self.brute_force(next, current_path, new_cost, remaining, current_best);
+            current_path.pop();
+            remaining.insert(next);
         }
     }
 }
