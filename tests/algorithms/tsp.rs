@@ -47,7 +47,7 @@ fn tsp_finds_optimal_solution(
     let total_cost = optimal_path.total_cost();
 
     // Verify the path visits all vertices exactly once and returns to start
-    assert_eq!(graph.vertex_count(), optimal_path.edges.len());
+    assert_eq!(graph.vertex_count(), optimal_path.len());
 
     // Verify the cost is within tolerance of expected optimal
     assert!(
@@ -104,7 +104,7 @@ fn tsp_finds_solution(
     let total_cost = optimal_path.total_cost();
 
     // Verify the path visits all vertices exactly once and returns to start
-    assert_eq!(graph.vertex_count(), optimal_path.edges.len());
+    assert_eq!(graph.vertex_count(), optimal_path.len());
 
     // Print information for small graph instances only to avoid cluttering test output
     if graph.vertex_count() <= 15 {

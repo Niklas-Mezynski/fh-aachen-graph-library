@@ -77,11 +77,11 @@ where
                 let mut current_v = *path_vertices.first().unwrap();
                 let mut path = Path::default();
                 for next_v in path_vertices.into_iter().skip(1) {
-                    path.edges.push((
+                    path.push(
                         current_v,
                         next_v,
                         self.get_edge(current_v, next_v).unwrap().clone(),
-                    ));
+                    );
                     current_v = next_v;
                 }
                 path

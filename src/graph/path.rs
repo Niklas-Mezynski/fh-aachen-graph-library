@@ -2,7 +2,7 @@ use super::WeightedEdge;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Path<VId, Edge> {
-    pub edges: Vec<(VId, VId, Edge)>,
+    edges: Vec<(VId, VId, Edge)>,
 }
 
 impl<VId, Edge> Path<VId, Edge>
@@ -25,6 +25,22 @@ where
             nodes.push(*to);
         }
         nodes
+    }
+
+    pub fn push(&mut self, from: VId, to: VId, edge: Edge) {
+        self.edges.push((from, to, edge));
+    }
+
+    pub fn edges(&self) -> impl Iterator<Item = &(VId, VId, Edge)> {
+        self.edges.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.edges.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.edges.is_empty()
     }
 }
 

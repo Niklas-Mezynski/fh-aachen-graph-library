@@ -49,25 +49,25 @@ where
 
         let mut prev_v = start_v;
         for current_v in mst.dfs_iter(start_v)?.skip(1).map(|v| v.get_id()) {
-            path.edges.push((
+            path.push(
                 prev_v,
                 current_v,
                 self.get_edge(prev_v, current_v)
                     .expect("Edge must exist as TSP works on complete graphs")
                     .to_owned(),
-            ));
+            );
 
             prev_v = current_v;
         }
 
         // Return to start_v
-        path.edges.push((
+        path.push(
             prev_v,
             start_v,
             self.get_edge(prev_v, start_v)
                 .expect("Edge must exist as TSP works on complete graphs")
                 .to_owned(),
-        ));
+        );
 
         Ok(path)
     }

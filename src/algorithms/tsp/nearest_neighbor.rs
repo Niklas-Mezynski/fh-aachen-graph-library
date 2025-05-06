@@ -65,7 +65,7 @@ where
             let next_v = next_v.get_id();
 
             // Add to path, mark as visited
-            path.edges.push((current_v, next_v, edge.to_owned()));
+            path.push(current_v, next_v, edge.to_owned());
             visited.insert(next_v);
             current_v = next_v;
 
@@ -73,7 +73,7 @@ where
         }
 
         // Complete the cycle (back to start)
-        path.edges.push((
+        path.push(
             current_v,
             start_v,
             self.get_edge(current_v, start_v)
@@ -81,7 +81,7 @@ where
                     "There must be and edge back to the start vertex. TSP expects a complete graph",
                 )
                 .to_owned(),
-        ));
+        );
 
         Ok(path)
     }
