@@ -117,23 +117,23 @@ where
         // Wir iterieren durch alle Indizes des nicht besuchten Knoten
         let last_remaining_idx = remaining.len() - 1;
         for next_i in 0..=last_remaining_idx {
-            // Wir untersuchen nun den Knoten an Position i
-            // Dazu swappen wir ihn an die letzte Position des Vecs, damit wir ihn per `.pop()` entfernen können.
-            // `swap()` und `pop()` sind beide O(1)
-            remaining.swap(next_i, last_remaining_idx);
-            let next = remaining.pop().unwrap();
-
-            let edge_cost = self.get_edge(current_v, next).unwrap().get_weight();
+            let edge_cost = self
+                .get_edge(current_v, remaining[next_i])
+                .unwrap()
+                .get_weight();
             let new_cost = current_cost.clone() + edge_cost;
 
             // Prüfen ob es sich noch lohnt, diese Tour weiter zu erkunden
             if current_best.is_some() && new_cost >= current_best.as_ref().unwrap().0 {
                 // Wenn bereits teurer -> Abbruch
-                // State vor rekursivem Aufruf wiederherstellen
-                remaining.push(next);
-                remaining.swap(next_i, last_remaining_idx);
                 continue;
             }
+
+            // Wir untersuchen nun den Knoten an Position i
+            // Dazu swappen wir ihn an die letzte Position des Vecs, damit wir ihn per `.pop()` entfernen können.
+            // `swap()` und `pop()` sind beide O(1)
+            remaining.swap(next_i, last_remaining_idx);
+            let next = remaining.pop().unwrap();
 
             // Rekursiv weiter erkunden
             current_path.push(next);
