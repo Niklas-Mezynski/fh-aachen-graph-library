@@ -1,7 +1,5 @@
 use std::{hash::Hash, ops::Add};
 
-use rustc_hash::FxHashSet;
-
 use crate::{
     graph::{GraphBase, Path, WeightedEdge, WithID},
     Graph, GraphError,
@@ -12,7 +10,7 @@ use super::TspResult;
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
-    <Backend::Vertex as WithID>::IDType: Copy + Hash + Eq,
+    <Backend::Vertex as WithID>::IDType: Copy + PartialEq,
     Backend::Edge: WeightedEdge + Clone,
     <Backend::Edge as WeightedEdge>::WeightType:
         Add<Output = <Backend::Edge as WeightedEdge>::WeightType> + Clone,
@@ -42,7 +40,7 @@ where
         let mut best_path = None;
         let mut initial_path = vec![start_v];
         let initial_cost = <Backend::Edge as WeightedEdge>::WeightType::default();
-        let mut remaining = remaining_vertices.collect::<FxHashSet<_>>();
+        let mut remaining = remaining_vertices.collect::<Vec<_>>();
 
         self.brute_force(
             start_v,
@@ -80,7 +78,7 @@ where
         current_v: <Backend::Vertex as WithID>::IDType,
         current_path: &mut Vec<<Backend::Vertex as WithID>::IDType>,
         current_cost: <Backend::Edge as WeightedEdge>::WeightType,
-        remaining: &mut FxHashSet<<Backend::Vertex as WithID>::IDType>,
+        remaining: &mut Vec<<Backend::Vertex as WithID>::IDType>,
         current_best: &mut Option<(
             <Backend::Edge as WeightedEdge>::WeightType,
             Vec<<Backend::Vertex as WithID>::IDType>,
@@ -116,17 +114,26 @@ where
         }
 
         // Für alle noch nicht besuchten Knoten
-        let next_vertices: Vec<_> = remaining.iter().cloned().collect();
-        for next in next_vertices {
+        // Wir iterieren durch alle Indizes des nicht besuchten Knoten
+        let last_remaining_idx = remaining.len() - 1;
+        for next_i in 0..=last_remaining_idx {
+            // Wir untersuchen nun den Knoten an Position i
+            // Dazu swappen wir ihn an die letzte Position des Vecs, damit wir ihn per `.pop()` entfernen können.
+            // `swap()` und `pop()` sind beide O(1)
+            remaining.swap(next_i, last_remaining_idx);
+            let next = remaining.pop().unwrap();
+
             let edge_cost = self.get_edge(current_v, next).unwrap().get_weight();
             let new_cost = current_cost.clone() + edge_cost;
 
             // Rekursiv weiter erkunden
-            remaining.remove(&next);
             current_path.push(next);
             self.brute_force(next, current_path, new_cost, remaining, current_best);
+
+            // State vor rekursivem Aufruf wiederherstellen
             current_path.pop();
-            remaining.insert(next);
+            remaining.push(next);
+            remaining.swap(next_i, last_remaining_idx);
         }
     }
 }
