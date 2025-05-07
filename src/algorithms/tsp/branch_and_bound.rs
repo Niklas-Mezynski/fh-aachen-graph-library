@@ -135,19 +135,29 @@ where
                                         .get_weight()
                                 });
 
-                            // Find the two cheapest (TODO: Single pass approach)
-                            let (cheapest_i, cheapest) = weights.clone()
-                                .enumerate()
-                                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                                .unwrap();
-                            let (_, second_cheapest) = weights
-                                .enumerate()
-                                .filter(|(i, _)| i != &cheapest_i)
-                                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                                .unwrap();
+                            // Find the two cheapest
+                            let mut cheapest: Option<(usize, <Backend::Edge as WeightedEdge>::WeightType)> = None;
+                            let mut second_cheapest: Option<(usize, <Backend::Edge as WeightedEdge>::WeightType)> = None;
+                            for (i, weight) in weights.enumerate() {
+                                // Init cheapest
+                                if cheapest.is_none() {
+                                    cheapest = Some((i, weight));
+                                    continue;
+                                }
+
+                                // Init second cheapest
+                                if second_cheapest.is_none() && cheapest.is_some() {
+                                    second_cheapest = Some((i, weight));
+                                }
+
+                                if weight < cheapest.unwrap().1 {
+                                    second_cheapest = cheapest;
+                                    cheapest = Some((i, weight));
+                                }
+                            }
 
                             // 2. Diese beiden Kantenkosten aufsummieren und das Ergebnis * 0.5
-                            (cheapest + second_cheapest) / 2u8.into()
+                            (cheapest.unwrap().1 + second_cheapest.unwrap().1) / 2u8.into()
                         })
                         .sum()
                 } else {
