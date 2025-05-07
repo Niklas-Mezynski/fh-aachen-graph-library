@@ -119,8 +119,8 @@ where
             // Wenn das + die aktuellen Kosten dann schon größer sind als current_best_cost, können wir abbrechen
 
             // 1. Für alle Knoten in remaining die billigste und 2. billigste Kante finden
+            // Außerdem prüfen, dass noch mindestens 2 (+ der aktuelle = 3) Knoten zu verarbeiten sind
             let min_remaining_cost: <Backend::Edge as WeightedEdge>::WeightType =
-                // Prüfen, dass noch mindestens 2 (+ der aktuelle = 3) Knoten zu verarbeiten sind
                 if remaining.len() > 2 {
                     remaining
                         .iter()
@@ -136,8 +136,14 @@ where
                                 });
 
                             // Find the two cheapest
-                            let mut cheapest: Option<(usize, <Backend::Edge as WeightedEdge>::WeightType)> = None;
-                            let mut second_cheapest: Option<(usize, <Backend::Edge as WeightedEdge>::WeightType)> = None;
+                            let mut cheapest: Option<(
+                                usize,
+                                <Backend::Edge as WeightedEdge>::WeightType,
+                            )> = None;
+                            let mut second_cheapest: Option<(
+                                usize,
+                                <Backend::Edge as WeightedEdge>::WeightType,
+                            )> = None;
                             for (i, weight) in weights.enumerate() {
                                 // Init cheapest
                                 if cheapest.is_none() {
