@@ -113,7 +113,50 @@ where
             let new_cost = current_cost + edge_cost;
 
             // Prüfen ob es sich noch lohnt, diese Tour weiter zu erkunden
-            if &new_cost >= current_best_cost {
+            // Verbesserte Prüfung:
+            // Für alle Knoten in remaining, schaue ich mir die billigste und 2. billigste Kante zu Knoten an, an denen ich noch nicht war
+            // Das Ergebnis * 0.5 und dann die Kantenkosten aufsummieren.
+            // Wenn das + die aktuellen Kosten dann schon größer sind als current_best_cost, können wir abbrechen
+
+            // 1. Für alle Knoten in remaining die billigste und 2. billigste Kante finden
+            let min_remaining_cost: <Backend::Edge as WeightedEdge>::WeightType =
+                // Prüfen, dass noch mindestens 2 (+ der aktuelle = 3) Knoten zu verarbeiten sind
+                if remaining.len() > 2 {
+                    remaining
+                        .iter()
+                        .filter(|v| v != &&next)
+                        .map(|remaining_to| {
+                            let weights = remaining
+                                .iter()
+                                .filter(move |remaining_from| remaining_to != *remaining_from)
+                                .map(|remaining_from| {
+                                    self.get_edge(*remaining_from, *remaining_to)
+                                        .unwrap()
+                                        .get_weight()
+                                });
+
+                            // Find the two cheapest (TODO: Single pass approach)
+                            let (cheapest_i, cheapest) = weights.clone()
+                                .enumerate()
+                                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+                                .unwrap();
+                            let (_, second_cheapest) = weights
+                                .enumerate()
+                                .filter(|(i, _)| i != &cheapest_i)
+                                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+                                .unwrap();
+
+                            // 2. Diese beiden Kantenkosten aufsummieren und das Ergebnis * 0.5
+                            (cheapest + second_cheapest) / 2u8.into()
+                        })
+                        .sum()
+                } else {
+                    // Wenn wir nicht mehr genügend Restkanten zum prüfen haben, dann rechnen wir "einfach" mit den aktuellen Pfadkosten
+                    <Backend::Edge as WeightedEdge>::WeightType::default()
+                };
+
+            // 3. Wenn diese minimalen Restkosten + die aktuellen Kosten >=
+            if &(new_cost + min_remaining_cost) >= current_best_cost {
                 // Wenn bereits teurer -> Abbruch
                 continue;
             }
