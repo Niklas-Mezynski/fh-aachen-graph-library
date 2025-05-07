@@ -35,6 +35,16 @@ where
         self.edges.iter()
     }
 
+    pub fn vertices(&self) -> Box<dyn Iterator<Item = &VId> + '_> {
+        if self.edges.is_empty() {
+            Box::new(std::iter::empty())
+        } else {
+            let first = self.edges.first().map(|(from, _, _)| from).into_iter();
+            let rest = self.edges.iter().map(|(_, to, _)| to);
+            Box::new(first.chain(rest))
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.edges.len()
     }
@@ -109,5 +119,34 @@ mod tests {
         let output = format!("{}", path);
         assert!(output.contains("1: 1 -> 2 via MockEdge { weight: 10 }"));
         assert!(output.contains("2: 2 -> 3 via MockEdge { weight: 20 }"));
+    }
+
+    #[test]
+    fn test_vertices_iter_empty() {
+        let path: Path<u32, MockEdge> = Path::default();
+        let vertices: Vec<_> = path.vertices().cloned().collect();
+        assert!(vertices.is_empty());
+    }
+
+    #[test]
+    fn test_vertices_iter_single_edge() {
+        let path = Path {
+            edges: vec![(1, 2, MockEdge { weight: 42 })],
+        };
+        let vertices: Vec<_> = path.vertices().cloned().collect();
+        assert_eq!(vertices, vec![1, 2]);
+    }
+
+    #[test]
+    fn test_vertices_iter_multiple_edges() {
+        let path = Path {
+            edges: vec![
+                (1, 2, MockEdge { weight: 10 }),
+                (2, 3, MockEdge { weight: 20 }),
+                (3, 4, MockEdge { weight: 30 }),
+            ],
+        };
+        let vertices: Vec<_> = path.vertices().cloned().collect();
+        assert_eq!(vertices, vec![1, 2, 3, 4]);
     }
 }
