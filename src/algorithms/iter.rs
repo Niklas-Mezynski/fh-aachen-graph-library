@@ -40,7 +40,7 @@ where
 impl<'a, Backend> Iterator for GraphIter<'a, Backend>
 where
     Backend: GraphBase,
-    Backend::Vertex: 'a ,
+    Backend::Vertex: 'a,
     <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
 {
     type Item = &'a Backend::Vertex;
@@ -255,7 +255,8 @@ mod tests {
         #[values(
             TraversalType::BFS, 
             // TraversalType::DFS // Not yet implemented
-        )] traversal_type: TraversalType,
+        )]
+        traversal_type: TraversalType,
     ) {
         let mut graph = create_test_graph;
 
