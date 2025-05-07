@@ -1,6 +1,6 @@
-use criterion::{black_box, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion};
 use graph_library::{graph::MatrixGraph, ListGraph, Undirected};
-use std::path::Path;
+use std::{hint::black_box, path::Path};
 
 use crate::{TestEdge, TestVertex};
 

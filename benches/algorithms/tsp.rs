@@ -1,4 +1,6 @@
-use criterion::{black_box, Criterion};
+use std::hint::black_box;
+
+use criterion::Criterion;
 use graph_library::{
     graph::{MatrixGraph, WeightedEdge, WithID},
     Undirected,
@@ -78,7 +80,7 @@ pub fn tsp(c: &mut Criterion) {
     // Branch & Bound algorithm benchmarks (exact algorithm on smaller instances)
     {
         let mut group = c.benchmark_group("tsp_branch_and_bound");
-        for file in files[0..4].iter() {
+        for file in files[0..6].iter() {
             let file_name = std::path::Path::new(file)
                 .file_name()
                 .unwrap_or_default()
@@ -93,6 +95,23 @@ pub fn tsp(c: &mut Criterion) {
                 });
             });
         }
+
+        // Big graph with only 1 sample
+        let file = files[6];
+        let file_name = std::path::Path::new(file)
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy();
+
+        group.sample_size(2).bench_function(file_name, |b| {
+            let graph = create_test_graph(file);
+            b.iter(|| {
+                graph
+                    .tsp_branch_and_bound(black_box(None))
+                    .unwrap_or_else(|e| panic!("Could not compute TSP: {:?}", e));
+            });
+        });
+
         group.finish();
     }
 

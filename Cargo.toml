@@ -11,7 +11,7 @@ thiserror = "2.0.12"
 
 [dev-dependencies]
 rstest = "0.25.0"
-criterion = "0.5"
+criterion = { git = "https://github.com/Niklas-Mezynski/criterion.rs.git" }
 itertools = "0.14.0"
 
 [[bench]]

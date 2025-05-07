@@ -1,5 +1,6 @@
-use criterion::{black_box, Criterion};
+use criterion::Criterion;
 use graph_library::{algorithms::iter::TraversalType, graph::Vertex, ListGraph, Undirected};
+use std::hint::black_box;
 
 /// Create a graph from a file for benchmarking purposes
 fn create_test_graph(file: &str) -> ListGraph<Vertex, (), Undirected> {

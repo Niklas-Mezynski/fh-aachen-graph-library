@@ -1,4 +1,7 @@
-use criterion::{black_box, Criterion};
+use std::hint::black_box;
+
+use criterion::Criterion;
+
 use graph_library::{
     graph::{EdgeWithWeight, ListGraphBackend, Vertex},
     ListGraph, Undirected,
