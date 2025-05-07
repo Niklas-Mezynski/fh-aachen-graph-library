@@ -5,15 +5,6 @@ use rstest::rstest;
 
 use super::{TestEdge, TestVertex};
 
-/// Enumeration of TSP algorithms for parametrized tests
-#[derive(Debug)]
-enum TspAlgorithm {
-    BruteForce,
-    BranchAndBound,
-    NearestNeighbor,
-    DoubleTree,
-}
-
 /// Helper function to create a graph from a file for testing
 fn create_test_graph(path: &str) -> MatrixGraph<TestVertex, TestEdge, Undirected> {
     MatrixGraph::<_, _, Undirected>::from_hoever_file(path, TestVertex, |remaining| {
@@ -31,19 +22,12 @@ fn create_test_graph(path: &str) -> MatrixGraph<TestVertex, TestEdge, Undirected
 #[case("resources/test_graphs/complete_undirected_weighted/K_10e.txt", 27.26)]
 #[case("resources/test_graphs/complete_undirected_weighted/K_12.txt", 45.19)]
 #[case("resources/test_graphs/complete_undirected_weighted/K_12e.txt", 36.13)]
-fn tsp_finds_optimal_solution(
-    #[case] input_path: &str,
-    #[case] expected_optimal_cost: f64,
-    #[values(TspAlgorithm::BruteForce, TspAlgorithm::BranchAndBound)] algorithm: TspAlgorithm,
-) {
+fn tsp_optimal_solution_brute_force(#[case] input_path: &str, #[case] expected_optimal_cost: f64) {
     let graph = create_test_graph(input_path);
 
-    let optimal_path = match algorithm {
-        TspAlgorithm::BruteForce => graph.tsp_brute_force(None),
-        TspAlgorithm::BranchAndBound => graph.tsp_branch_and_bound(None),
-        _ => unreachable!(),
-    }
-    .unwrap_or_else(|e| panic!("Could not compute tsp solution: {:?}", e));
+    let optimal_path = graph
+        .tsp_brute_force(None)
+        .unwrap_or_else(|e| panic!("Could not compute tsp solution: {:?}", e));
 
     let total_cost = optimal_path.total_cost();
 
@@ -76,6 +60,61 @@ fn tsp_finds_optimal_solution(
 }
 
 #[rstest]
+#[case("resources/test_graphs/complete_undirected_weighted/K_10.txt", 38.41)]
+#[case("resources/test_graphs/complete_undirected_weighted/K_10e.txt", 27.26)]
+#[case("resources/test_graphs/complete_undirected_weighted/K_12.txt", 45.19)]
+#[case("resources/test_graphs/complete_undirected_weighted/K_12e.txt", 36.13)]
+#[case("resources/test_graphs/complete_undirected_weighted/K_15.txt", 53.21)]
+#[case("resources/test_graphs/complete_undirected_weighted/K_15e.txt", 30.54)]
+#[case("resources/test_graphs/complete_undirected_weighted/K_20.txt", 71.65)]
+fn tsp_optimal_solution_branch_and_bound(
+    #[case] input_path: &str,
+    #[case] expected_optimal_cost: f64,
+) {
+    let graph = create_test_graph(input_path);
+
+    let optimal_path = graph
+        .tsp_branch_and_bound(None)
+        .unwrap_or_else(|e| panic!("Could not compute tsp solution: {:?}", e));
+
+    let total_cost = optimal_path.total_cost();
+
+    // Verify the path visits all vertices exactly once
+    assert_eq!(graph.vertex_count(), optimal_path.len());
+
+    assert_eq!(
+        optimal_path
+            .edges()
+            .map(|(from, _, _)| from)
+            .unique()
+            .count(),
+        graph.vertex_count(),
+        "Path should visit each vertex exactly once"
+    );
+    assert_eq!(
+        optimal_path.edges().map(|(_, to, _)| to).unique().count(),
+        graph.vertex_count(),
+        "Path should visit each vertex exactly once"
+    );
+
+    // Verify the cost is within tolerance of expected optimal
+    assert!(
+        (total_cost - expected_optimal_cost).abs() < 1e-2,
+        "For graph {}, expected optimal TSP cost to be {}, but got {}",
+        input_path,
+        expected_optimal_cost,
+        total_cost
+    );
+}
+
+/// Enumeration of TSP algorithms for parametrized tests
+#[derive(Debug)]
+enum ApproximationTspAlgorithm {
+    NearestNeighbor,
+    DoubleTree,
+}
+
+#[rstest]
 #[case(
     "resources/test_graphs/complete_undirected_weighted/K_10.txt",
     Some(38.41)
@@ -102,17 +141,20 @@ fn tsp_finds_optimal_solution(
 fn tsp_finds_solution(
     #[case] input_path: &str,
     #[case] expected_optimal_cost: Option<f64>,
-    #[values(TspAlgorithm::NearestNeighbor, TspAlgorithm::DoubleTree)] algorithm: TspAlgorithm,
+    #[values(
+        ApproximationTspAlgorithm::NearestNeighbor,
+        ApproximationTspAlgorithm::DoubleTree
+    )]
+    algorithm: ApproximationTspAlgorithm,
 ) {
     let graph = create_test_graph(input_path);
 
     let (optimal_path, cost_to_check): (_, Option<f64>) = match algorithm {
-        TspAlgorithm::NearestNeighbor => (graph.tsp_nearest_neighbor(None), None),
-        TspAlgorithm::DoubleTree => (
+        ApproximationTspAlgorithm::NearestNeighbor => (graph.tsp_nearest_neighbor(None), None),
+        ApproximationTspAlgorithm::DoubleTree => (
             graph.tsp_double_tree(None),
             expected_optimal_cost.map(|v| v * 2_f64),
         ),
-        _ => unreachable!(),
     };
     let optimal_path =
         optimal_path.unwrap_or_else(|e| panic!("Could not compute tsp solution: {:?}", e));
