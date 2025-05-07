@@ -10,7 +10,7 @@ mod graph;
 fn configure() -> Criterion {
     Criterion::default()
         .sample_size(10) // Reduced sample size for faster development iterations
-        .measurement_time(std::time::Duration::from_secs(10)) // Reasonable measurement time
+        .measurement_time(std::time::Duration::from_secs(5)) // Reasonable measurement time
         .warm_up_time(std::time::Duration::from_secs(1)) // Warm up before actual measurements
 }
 

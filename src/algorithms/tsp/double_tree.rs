@@ -19,7 +19,7 @@ where
     /// Finds a path with a TSP solution using the double tree algorithm.
     /// It constructs an MST and runs a depth-first search on it to construct the Hamilton-tour.
     ///
-    /// The solution is within twice the optimal solution cost.
+    /// The solution is within twice the optimal solution cost (if the edge weights fulfill the triangle inequality).
     ///
     /// # Requirements
     /// - `self` must be a fully connected graph with weights assigned to all edges.
