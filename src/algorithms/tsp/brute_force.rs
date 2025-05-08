@@ -64,7 +64,7 @@ where
                 Ok(path)
             }
             None => Err(GraphError::AlgorithmError(
-                "Could not solve TSP, not optimal cost was found".to_string(),
+                "Could not solve TSP, no optimal solution was found".to_string(),
             )),
         }
     }

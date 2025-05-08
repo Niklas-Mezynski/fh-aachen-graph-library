@@ -70,7 +70,6 @@ where
         Ok(path)
     }
 
-    #[allow(clippy::type_complexity)]
     /// Recursive function to go through the different permutations
     fn branch_and_bound(
         &self,
