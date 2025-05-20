@@ -37,7 +37,7 @@ where
         );
 
         let n = self.vertex_count();
-        for i in 0..n {
+        for i in 1..=n {
             let mut changed = false;
             for (v, w, cost) in edges.iter() {
                 let cost_v = costs.get(v).copied();
@@ -67,11 +67,11 @@ where
                 }
             }
 
-            // if !changed {
-            //     break;
-            // }
+            if !changed {
+                break;
+            }
 
-            if i == n - 1 && changed {
+            if i == n && changed {
                 // negative cycle
                 return None;
             }

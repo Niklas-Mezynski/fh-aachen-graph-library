@@ -11,7 +11,7 @@ enum Algorithms {
 #[rstest]
 #[case("resources/test_graphs/directed_weighted/Wege1.txt", 2, 0, 6.0)]
 #[case("resources/test_graphs/undirected_weighted/G_1_2.txt", 0, 1, 5.56283)]
-fn shortest_path_directed_positive_weights(
+fn directed_positive_weights(
     #[case] input_path: &str,
     #[case] from: u32,
     #[case] to: u32,
@@ -53,7 +53,7 @@ fn shortest_path_directed_positive_weights(
 #[rstest]
 #[case("resources/test_graphs/directed_weighted/Wege1.txt", 2, 0, 6.0)]
 #[case("resources/test_graphs/undirected_weighted/G_1_2.txt", 0, 1, 5.56283)]
-fn shortest_path_directed_positive_weights_early_abort(
+fn directed_positive_weights_early_abort(
     #[case] input_path: &str,
     #[case] from: u32,
     #[case] to: u32,
@@ -92,7 +92,7 @@ fn shortest_path_directed_positive_weights_early_abort(
 
 #[rstest]
 #[case("resources/test_graphs/undirected_weighted/G_1_2.txt", 0, 1, 2.36802)]
-fn shortest_path_undirected(
+fn undirected(
     #[case] input_path: &str,
     #[case] from: u32,
     #[case] to: u32,
@@ -134,7 +134,7 @@ fn shortest_path_undirected(
 #[rstest]
 #[case("resources/test_graphs/directed_weighted/Wege2.txt", 2, 0, Some(2.0))]
 #[case("resources/test_graphs/directed_weighted/Wege3.txt", 2, 0, None)]
-fn shortest_path_directed_negative_weights(
+fn directed_negative_weights(
     #[case] input_path: &str,
     #[case] from: u32,
     #[case] to: u32,
