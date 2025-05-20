@@ -1,6 +1,6 @@
 use std::{
     iter::Sum,
-    ops::{AddAssign, Div},
+    ops::{Add, AddAssign, Div},
 };
 
 use super::{error::GraphError, Direction};
@@ -17,6 +17,7 @@ pub trait WeightedEdge {
         + From<u8>
         + PartialOrd
         + AddAssign<Self::WeightType>
+        + Add<Output = Self::WeightType>
         + Default;
 
     fn get_weight(&self) -> Self::WeightType;
