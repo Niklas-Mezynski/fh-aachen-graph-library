@@ -2,6 +2,7 @@ use graph_library::graph::{WeightedEdge, WithID};
 
 pub mod count_connected_subgraphs;
 pub mod mst;
+pub mod shortest_path;
 pub mod tsp;
 
 /// Vertex representation for testing, implements the required traits

@@ -14,15 +14,14 @@ where
     Backend::Edge: WeightedEdge + Clone,
     <Backend::Edge as WeightedEdge>::WeightType: Copy,
 {
-    /// Dijkstra's shortest path algorithm.
+    /// Bellman Ford's shortest path algorithm.
     ///
     /// Compute the length of the shortest path from `start` to every reachable node.
     ///
     /// Returns a tuple with a `HashMap` that maps `VertexID` to path cost and
     /// a `HashMap` that maps `VertexID` to the predecessor `VertexID` that can be used to reconstruct the path.
-    ///
     #[allow(clippy::type_complexity)]
-    pub fn dijkstra(
+    pub fn bellman_ford(
         &self,
         start: <Backend::Vertex as WithID>::IDType,
         goal: Option<<Backend::Vertex as WithID>::IDType>,

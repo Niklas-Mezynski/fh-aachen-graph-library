@@ -162,6 +162,19 @@ where
     }
 }
 
+impl<Vertex: WithID, Edge> From<AdjacencyListGraph<Vertex, Edge, Undirected>>
+    for AdjacencyListGraph<Vertex, Edge, Directed>
+{
+    fn from(graph: AdjacencyListGraph<Vertex, Edge, Undirected>) -> Self {
+        // We can just reuse the adjacency list as for undirected graphs, we already add the edges in both directions
+        AdjacencyListGraph {
+            vertices: graph.vertices,
+            adjacency: graph.adjacency,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
 impl<Vertex, Edge> GraphBase for AdjacencyListGraph<Vertex, Edge, Directed>
 where
     Vertex::IDType: Eq + Hash + PartialOrd + Copy,
