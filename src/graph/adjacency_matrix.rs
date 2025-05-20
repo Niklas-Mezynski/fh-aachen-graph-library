@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
 
 use super::{
-    error::GraphError, Directed, Direction, EdgeTuple, GraphBase, Undirected, WeightedEdge, WithID,
+    error::GraphError, Directed, Direction, EdgeTuple, GraphBase, IntoDirected, Undirected,
+    WeightedEdge, WithID,
 };
 
 /// A graph data structure represented by an adjacency matrix.
@@ -178,6 +179,22 @@ where
 {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<Vertex, Edge> IntoDirected<AdjacencyMatrixGraph<Vertex, Edge, Directed>>
+    for AdjacencyMatrixGraph<Vertex, Edge, Undirected>
+where
+    Vertex: WithID,
+    Vertex::IDType: Into<usize> + From<usize> + Copy,
+    Edge: Clone,
+{
+    fn into_directed(self) -> AdjacencyMatrixGraph<Vertex, Edge, Directed> {
+        AdjacencyMatrixGraph {
+            vertices: self.vertices,
+            matrix: self.matrix,
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
