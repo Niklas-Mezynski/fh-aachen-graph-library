@@ -1,4 +1,7 @@
-use graph_library::{graph::EdgeWithWeight, ListGraph};
+use graph_library::{
+    graph::{EdgeWithWeight, IntoDirected},
+    ListGraph,
+};
 use graph_library::{Directed, Undirected};
 use rstest::rstest;
 
@@ -99,7 +102,7 @@ fn undirected(
     #[case] expected_shortest_path_length: f64,
     #[values(Algorithms::Dijkstra, Algorithms::BellmanFord)] algorithm: Algorithms,
 ) {
-    let graph =
+    let graph: ListGraph<_, _, Directed> =
         ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
@@ -107,7 +110,9 @@ fn undirected(
                     .expect("Graph file value must be a float"),
             )
         })
-        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+        .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e))
+        // Convert it to a directed graph, so that the algorithms can operate on it
+        .into_directed();
 
     let (costs, _predecessor) = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, None),

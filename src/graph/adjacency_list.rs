@@ -5,7 +5,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap};
 use super::{
     error::GraphError,
     traits::{GraphBase, WithID},
-    Directed, Direction, Undirected, WeightedEdge,
+    Directed, Direction, IntoDirected, Undirected, WeightedEdge,
 };
 
 #[derive(Debug)]
@@ -162,14 +162,17 @@ where
     }
 }
 
-impl<Vertex: WithID, Edge> From<AdjacencyListGraph<Vertex, Edge, Undirected>>
-    for AdjacencyListGraph<Vertex, Edge, Directed>
+impl<Vertex, Edge> IntoDirected<AdjacencyListGraph<Vertex, Edge, Directed>>
+    for AdjacencyListGraph<Vertex, Edge, Undirected>
+where
+    Vertex::IDType: Eq + Hash + PartialOrd + Copy,
+    Vertex: WithID,
+    Edge: Clone,
 {
-    fn from(graph: AdjacencyListGraph<Vertex, Edge, Undirected>) -> Self {
-        // We can just reuse the adjacency list as for undirected graphs, we already add the edges in both directions
+    fn into_directed(self) -> AdjacencyListGraph<Vertex, Edge, Directed> {
         AdjacencyListGraph {
-            vertices: graph.vertices,
-            adjacency: graph.adjacency,
+            vertices: self.vertices,
+            adjacency: self.adjacency,
             _phantom: std::marker::PhantomData,
         }
     }

@@ -3,7 +3,7 @@ use std::{
     ops::{Add, AddAssign, Div},
 };
 
-use super::{error::GraphError, Direction};
+use super::{error::GraphError, Directed, Direction, Undirected};
 
 pub trait WithID {
     type IDType;
@@ -145,4 +145,15 @@ pub trait GraphBase: Default {
     fn get_total_weight(&self) -> <Self::Edge as WeightedEdge>::WeightType
     where
         Self::Edge: WeightedEdge;
+}
+
+pub trait IntoDirected<Output>
+where
+    Self: GraphBase<Direction = Undirected>,
+    Output: GraphBase<Direction = Directed>,
+{
+    /// This function will turn an undirected graph into a directed graph
+    /// This may involve duplicating the edges so that the undirected edge
+    /// `{a, b}` then becomes the two directed edges `{(a, b), (b, a)}`
+    fn into_directed(self) -> Output;
 }

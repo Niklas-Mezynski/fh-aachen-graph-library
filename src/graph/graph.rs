@@ -9,7 +9,7 @@ use crate::{
 };
 use delegate::delegate;
 
-use super::{adjacency_matrix::AdjacencyMatrixGraph, Directed, Undirected};
+use super::{adjacency_matrix::AdjacencyMatrixGraph, Directed, IntoDirected, Undirected};
 
 #[derive(Debug)]
 pub struct Graph<Backend> {
@@ -143,11 +143,14 @@ where
     }
 }
 
-impl<V: WithID, E> From<ListGraph<V, E, Undirected>> for ListGraph<V, E, Directed> {
-    /// Converts an undirected graph to a directed graph.
-    fn from(value: ListGraph<V, E, Undirected>) -> Self {
+impl<BackendIn, BackendOut> IntoDirected<Graph<BackendOut>> for Graph<BackendIn>
+where
+    BackendIn: GraphBase<Direction = Undirected> + IntoDirected<BackendOut>,
+    BackendOut: GraphBase<Direction = Directed>,
+{
+    fn into_directed(self) -> Graph<BackendOut> {
         Graph {
-            backend: value.backend.into(),
+            backend: self.backend.into_directed(),
         }
     }
 }

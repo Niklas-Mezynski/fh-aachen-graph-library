@@ -3,12 +3,12 @@ use std::hash::Hash;
 
 use crate::{
     graph::{GraphBase, WeightedEdge, WithID},
-    Graph,
+    Directed, Graph,
 };
 
 impl<Backend> Graph<Backend>
 where
-    Backend: GraphBase,
+    Backend: GraphBase<Direction = Directed>,
     <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash,
     Backend::Edge: WeightedEdge + Clone,
     <Backend::Edge as WeightedEdge>::WeightType: Copy,
