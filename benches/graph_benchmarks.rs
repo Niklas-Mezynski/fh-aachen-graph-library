@@ -23,6 +23,7 @@ criterion_group!(
         count_connected_subgraphs::count_connected_subgraphs,
         mst::mst,
         tsp::tsp,
+        shortest_path::shortest_path,
 );
 
 /// Vertex representation for testing, implements the required traits

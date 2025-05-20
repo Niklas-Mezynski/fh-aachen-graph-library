@@ -65,3 +65,17 @@ All benchmarks have been conducted on an Apple MacBook Pro 2023 with M2 Pro Chip
 | K_50.txt   | -           | -                | 2.32 µs          | 20.65 µs    |
 | K_70.txt   | -           | -                | 3.99 µs          | 63.52 µs    |
 | K_100.txt  | -           | -                | 7.78 µs          | 143.08 µs   |
+
+### Shortest Path Benchmarks
+
+| Label / Input File       | Dijkstra | Bellman-Ford |
+| ------------------------ | -------- | ------------ |
+| Wege1.txt (directed)     | 373 ns   | 323 ns       |
+| Wege2.txt (directed)     | -        | 528 ns       |
+| Wege3.txt (directed)     | -        | 812 ns       |
+| G_1_2.txt (directed)     | 72.6 µs  | 78.4 µs      |
+| G_1_2.txt (undirected)   | 115.9 µs | 159.6 µs     |
+| G_1_20.txt (directed)    | 423.6 µs | 593.3 µs     |
+| G_1_20.txt (undirected)  | 738.9 µs | 1.07 ms      |
+| G_10_20.txt (directed)   | 1.16 ms  | 2.49 ms      |
+| G_10_20.txt (undirected) | 1.87 ms  | 3.10 ms      |
