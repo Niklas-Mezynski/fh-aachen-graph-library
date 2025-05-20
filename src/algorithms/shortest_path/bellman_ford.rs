@@ -6,6 +6,8 @@ use crate::{
     Directed, Graph,
 };
 
+use super::single_source_shortest_paths::SingleSourceShortestPaths;
+
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase<Direction = Directed>,
@@ -23,10 +25,12 @@ where
     pub fn bellman_ford(
         &self,
         start: <Backend::Vertex as WithID>::IDType,
-    ) -> Option<(
-        FxHashMap<<Backend::Vertex as WithID>::IDType, <Backend::Edge as WeightedEdge>::WeightType>,
-        FxHashMap<<Backend::Vertex as WithID>::IDType, <Backend::Vertex as WithID>::IDType>,
-    )> {
+    ) -> Option<
+        SingleSourceShortestPaths<
+            <Backend::Vertex as WithID>::IDType,
+            <Backend::Edge as WeightedEdge>::WeightType,
+        >,
+    > {
         let mut costs = FxHashMap::default();
         let mut predecessor = FxHashMap::default();
         let edges = self.get_all_edges().collect::<Vec<_>>();
@@ -77,6 +81,6 @@ where
             }
         }
 
-        Some((costs, predecessor))
+        Some(SingleSourceShortestPaths::new(start, costs, predecessor))
     }
 }

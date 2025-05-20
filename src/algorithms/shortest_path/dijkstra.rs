@@ -7,6 +7,8 @@ use crate::{
     Graph,
 };
 
+use super::single_source_shortest_paths::SingleSourceShortestPaths;
+
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
@@ -21,15 +23,14 @@ where
     /// Returns a tuple with a `HashMap` that maps `VertexID` to path cost and
     /// a `HashMap` that maps `VertexID` to the predecessor `VertexID` that can be used to reconstruct the path.
     ///
-    #[allow(clippy::type_complexity)]
     pub fn dijkstra(
         &self,
         start: <Backend::Vertex as WithID>::IDType,
         goal: Option<<Backend::Vertex as WithID>::IDType>,
-    ) -> (
-        FxHashMap<<Backend::Vertex as WithID>::IDType, <Backend::Edge as WeightedEdge>::WeightType>,
-        FxHashMap<<Backend::Vertex as WithID>::IDType, <Backend::Vertex as WithID>::IDType>,
-    ) {
+    ) -> SingleSourceShortestPaths<
+        <Backend::Vertex as WithID>::IDType,
+        <Backend::Edge as WeightedEdge>::WeightType,
+    > {
         let mut visited = FxHashSet::default();
         let mut costs = FxHashMap::default();
         let mut predecessor = FxHashMap::default();
@@ -80,7 +81,7 @@ where
             visited.insert(node_entry.vertex_id);
         }
 
-        (costs, predecessor)
+        SingleSourceShortestPaths::new(start, costs, predecessor)
     }
 }
 

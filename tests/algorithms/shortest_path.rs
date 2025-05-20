@@ -31,16 +31,18 @@ fn directed_positive_weights(
         })
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-    let (costs, _predecessor) = match algorithm {
+    let shortest_path = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, None),
         Algorithms::BellmanFord => graph
             .bellman_ford(from)
             .unwrap_or_else(|| panic!("Algorithm did not return a valid result")),
     };
 
-    let cost = costs
-        .get(&to)
+    let cost = shortest_path
+        .get_cost(to)
         .unwrap_or_else(|| panic!("Shortest path from {} to {} not found in graph", from, to));
+
+    println!("{}\n{:?}", input_path, shortest_path.get_path(to));
 
     assert!(
         (cost - expected_shortest_path_length).abs() < 1e-5,
@@ -73,13 +75,13 @@ fn directed_positive_weights_early_abort(
         })
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-    let (costs, _predecessor) = match algorithm {
+    let shortest_path = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, Some(to)),
         algo => panic!("{:?} does not have the option to early abort", algo),
     };
 
-    let cost = costs
-        .get(&to)
+    let cost = shortest_path
+        .get_cost(to)
         .unwrap_or_else(|| panic!("Shortest path from {} to {} not found in graph", from, to));
 
     assert!(
@@ -114,15 +116,15 @@ fn undirected(
         // Convert it to a directed graph, so that the algorithms can operate on it
         .into_directed();
 
-    let (costs, _predecessor) = match algorithm {
+    let shortest_path = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, None),
         Algorithms::BellmanFord => graph
             .bellman_ford(from)
             .unwrap_or_else(|| panic!("Algorithm did not return a valid result")),
     };
 
-    let cost = costs
-        .get(&to)
+    let cost = shortest_path
+        .get_cost(to)
         .unwrap_or_else(|| panic!("Shortest path from {} to {} not found in graph", from, to));
 
     assert!(
@@ -166,8 +168,8 @@ fn directed_negative_weights(
 
     match expected_shortest_path_length {
         Some(expected) => {
-            let (costs, _predecessor) = result.expect("Algorithm should find a result");
-            let cost = costs.get(&to).unwrap_or_else(|| {
+            let shortest_path = result.expect("Algorithm should find a result");
+            let cost = shortest_path.get_cost(to).unwrap_or_else(|| {
                 panic!("Shortest path from {} to {} not found in graph", from, to)
             });
             assert!(
@@ -180,8 +182,8 @@ fn directed_negative_weights(
                 cost
             )
         }
-        None => assert_eq!(
-            result, None,
+        None => assert!(
+            result.is_none(),
             "For graph {}, expected to detect a negative cycle",
             input_path
         ),
