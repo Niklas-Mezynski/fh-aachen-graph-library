@@ -30,7 +30,9 @@ fn shortest_path_directed_positive_weights(
 
     let (costs, _predecessor) = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, None),
-        Algorithms::BellmanFord => todo!(),
+        Algorithms::BellmanFord => graph
+            .bellman_ford(from)
+            .unwrap_or_else(|| panic!("Algorithm did not return a valid result")),
     };
 
     let cost = costs
@@ -56,7 +58,7 @@ fn shortest_path_directed_positive_weights_early_abort(
     #[case] from: u32,
     #[case] to: u32,
     #[case] expected_shortest_path_length: f64,
-    #[values(Algorithms::Dijkstra, Algorithms::BellmanFord)] algorithm: Algorithms,
+    #[values(Algorithms::Dijkstra)] algorithm: Algorithms,
 ) {
     let graph =
         ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
@@ -70,7 +72,7 @@ fn shortest_path_directed_positive_weights_early_abort(
 
     let (costs, _predecessor) = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, Some(to)),
-        Algorithms::BellmanFord => todo!(),
+        algo => panic!("{:?} does not have the option to early abort", algo),
     };
 
     let cost = costs
@@ -109,7 +111,9 @@ fn shortest_path_undirected(
 
     let (costs, _predecessor) = match algorithm {
         Algorithms::Dijkstra => graph.dijkstra(from, None),
-        Algorithms::BellmanFord => todo!(),
+        Algorithms::BellmanFord => graph
+            .bellman_ford(from)
+            .unwrap_or_else(|| panic!("Algorithm did not return a valid result")),
     };
 
     let cost = costs
@@ -147,25 +151,34 @@ fn shortest_path_directed_negative_weights(
         })
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-    let (costs, _predecessor) = match algorithm {
-        Algorithms::Dijkstra => graph.dijkstra(from, None),
-        Algorithms::BellmanFord => todo!(),
+    let result = match algorithm {
+        Algorithms::BellmanFord => graph.bellman_ford(from),
+        algo => panic!(
+            "{:?} does not have the option to detect negative cycles",
+            algo
+        ),
     };
 
-    let cost = costs
-        .get(&to)
-        .unwrap_or_else(|| panic!("Shortest path from {} to {} not found in graph", from, to));
-
     match expected_shortest_path_length {
-        Some(expected) => assert!(
-            (cost - expected).abs() < 1e-5,
-            "For graph {}, expected shortest path from {} to {} to be {}, but got {}",
-            input_path,
-            from,
-            to,
-            expected,
-            cost
+        Some(expected) => {
+            let (costs, _predecessor) = result.expect("Algorithm should find a result");
+            let cost = costs.get(&to).unwrap_or_else(|| {
+                panic!("Shortest path from {} to {} not found in graph", from, to)
+            });
+            assert!(
+                (cost - expected).abs() < 1e-5,
+                "For graph {}, expected shortest path from {} to {} to be {}, but got {}",
+                input_path,
+                from,
+                to,
+                expected,
+                cost
+            )
+        }
+        None => assert_eq!(
+            result, None,
+            "For graph {}, expected to detect a negative cycle",
+            input_path
         ),
-        None => todo!(),
     }
 }

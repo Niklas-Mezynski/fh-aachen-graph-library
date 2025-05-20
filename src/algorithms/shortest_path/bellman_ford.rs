@@ -1,6 +1,5 @@
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::{cmp::Reverse, collections::BinaryHeap, hash::Hash};
+use rustc_hash::FxHashMap;
+use std::hash::Hash;
 
 use crate::{
     graph::{GraphBase, WeightedEdge, WithID},
@@ -24,95 +23,60 @@ where
     pub fn bellman_ford(
         &self,
         start: <Backend::Vertex as WithID>::IDType,
-        goal: Option<<Backend::Vertex as WithID>::IDType>,
-    ) -> (
+    ) -> Option<(
         FxHashMap<<Backend::Vertex as WithID>::IDType, <Backend::Edge as WeightedEdge>::WeightType>,
         FxHashMap<<Backend::Vertex as WithID>::IDType, <Backend::Vertex as WithID>::IDType>,
-    ) {
-        let mut visited = FxHashSet::default();
+    )> {
         let mut costs = FxHashMap::default();
         let mut predecessor = FxHashMap::default();
-        let mut visit_next = BinaryHeap::new();
+        let edges = self.get_all_edges().collect::<Vec<_>>();
 
         costs.insert(
             start,
             <Backend::Edge as WeightedEdge>::WeightType::default(),
         );
-        visit_next.push(Reverse(EdgeEntry::new(
-            <Backend::Edge as WeightedEdge>::WeightType::default(),
-            start,
-        )));
 
-        while let Some(Reverse(node_entry)) = visit_next.pop() {
-            if visited.contains(&node_entry.vertex_id) {
-                continue;
-            }
-
-            // If we are visiting the goal node, we can stop as we already computed the shortest path to it
-            if goal.as_ref() == Some(&node_entry.vertex_id) {
-                break;
-            }
-
-            // For each (unvisited) adjacent vertex, check if we can improve the cost
-            // TODO: Filter elements in the iterator
-            for (next_v, edge) in self.get_adjacent_vertices_with_edges(node_entry.vertex_id) {
-                let next_v = next_v.get_id();
-                if visited.contains(&next_v) {
-                    continue;
-                }
-                let new_cost = node_entry.cost + edge.get_weight();
-                match costs.entry(next_v) {
-                    Occupied(existing_entry) => {
-                        if new_cost < *existing_entry.get() {
-                            *existing_entry.into_mut() = new_cost;
-                            visit_next.push(Reverse(EdgeEntry::new(new_cost, next_v)));
-                            predecessor.insert(next_v, node_entry.vertex_id);
+        let n = self.vertex_count();
+        for i in 0..n {
+            let mut changed = false;
+            for (v, w, cost) in edges.iter() {
+                let cost_v = costs.get(v).copied();
+                let cost_w = costs.get(w).copied();
+                let new_cost = match (cost_v, cost_w) {
+                    (Some(cost_v), Some(cost_w)) => {
+                        let new_cost = cost_v + cost.get_weight();
+                        if new_cost < cost_w {
+                            Some(new_cost)
+                        } else {
+                            None
                         }
                     }
-                    Vacant(new_entry) => {
-                        new_entry.insert(new_cost);
-                        visit_next.push(Reverse(EdgeEntry::new(new_cost, next_v)));
-                        predecessor.insert(next_v, node_entry.vertex_id);
+
+                    (Some(cost_v), None) => {
+                        let new_cost = cost_v + cost.get_weight();
+                        Some(new_cost)
                     }
+
+                    _ => None,
+                };
+
+                if let Some(new_cost) = new_cost {
+                    costs.insert(*w, new_cost);
+                    predecessor.insert(*w, *v);
+                    changed = true;
                 }
             }
-            visited.insert(node_entry.vertex_id);
+
+            // if !changed {
+            //     break;
+            // }
+
+            if i == n - 1 && changed {
+                // negative cycle
+                return None;
+            }
         }
 
-        (costs, predecessor)
-    }
-}
-
-/// Helper struct for Min-Heap behavior if weights are floats or need custom ordering
-struct EdgeEntry<W: PartialOrd, VId> {
-    cost: W,
-    vertex_id: VId,
-}
-
-impl<W: PartialOrd, VId> EdgeEntry<W, VId> {
-    pub fn new(cost: W, vertex_id: VId) -> Self {
-        EdgeEntry { cost, vertex_id }
-    }
-}
-
-impl<W: PartialOrd, VId> PartialEq for EdgeEntry<W, VId> {
-    fn eq(&self, other: &Self) -> bool {
-        self.cost == other.cost
-    }
-}
-
-impl<W: PartialOrd, VId> Eq for EdgeEntry<W, VId> {}
-
-impl<W: PartialOrd, VId> PartialOrd for EdgeEntry<W, VId> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<W: PartialOrd, VId> Ord for EdgeEntry<W, VId> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.cost
-            .partial_cmp(&other.cost)
-            .expect("Graph weights must not contain NaN values")
+        Some((costs, predecessor))
     }
 }
