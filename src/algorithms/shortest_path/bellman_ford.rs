@@ -19,6 +19,10 @@ where
     ///
     /// Compute the length of the shortest path from `start` to every reachable node.
     ///
+    /// The underlying implementation is a  Queue-Based-Bellman-Ford.
+    /// I.e. instead of checking all edges in each iteration, it only checks outgoing edges
+    /// of vertices that have changed since the last iteration
+    ///
     /// Returns a tuple with a `HashMap` that maps `VertexID` to path cost and
     /// a `HashMap` that maps `VertexID` to the predecessor `VertexID` that can be used to reconstruct the path.
     #[allow(clippy::type_complexity)]
@@ -36,24 +40,33 @@ where
         // Which vertex was visited before each other. Can be used to reconstruct the exact path
         let mut predecessor = FxHashMap::default();
 
-        let edges = self.get_all_edges().collect::<Vec<_>>();
-
+        // Initialize the cost to the start vertex with 0
         costs.insert(
             start,
             <Backend::Edge as WeightedEdge>::WeightType::default(),
         );
 
+        // Track the vertices, whose adjacent vertices we have to check in the next iteration
+        // In the beginning, this is just the start vertex
+        let mut vertices = vec![start];
+
         let n = self.vertex_count();
         // For |V| - 1 iterations, check all edges and see if we can decrease cost to any vertex
         for i in 1..=n {
-            let mut changed = false;
-            for (v, w, cost) in edges.iter() {
+            let mut changed_vertices = vec![];
+
+            // Get all outgoing edges from `vertices`
+            // We basically only check those vertices, where the cost has improved in the last iteration
+            for (v, w, edge) in vertices.iter().flat_map(|v| {
+                self.get_adjacent_vertices_with_edges(*v)
+                    .map(|(w, e)| (*v, w.get_id(), e))
+            }) {
                 // Check if the edge (v, w) can improve the current "best" cost to vertex w
-                let cost_v = costs.get(v).copied();
-                let cost_w = costs.get(w).copied();
+                let cost_v = costs.get(&v).copied();
+                let cost_w = costs.get(&w).copied();
                 let new_cost = match (cost_v, cost_w) {
                     (Some(cost_v), Some(cost_w)) => {
-                        let new_cost = cost_v + cost.get_weight();
+                        let new_cost = cost_v + edge.get_weight();
                         if new_cost < cost_w {
                             Some(new_cost)
                         } else {
@@ -62,7 +75,7 @@ where
                     }
 
                     (Some(cost_v), None) => {
-                        let new_cost = cost_v + cost.get_weight();
+                        let new_cost = cost_v + edge.get_weight();
                         Some(new_cost)
                     }
 
@@ -70,20 +83,24 @@ where
                 };
 
                 if let Some(new_cost) = new_cost {
-                    costs.insert(*w, new_cost);
-                    predecessor.insert(*w, *v);
-                    changed = true;
+                    costs.insert(w, new_cost);
+                    predecessor.insert(w, v);
+                    changed_vertices.push(w);
                 }
             }
 
-            if !changed {
+            // Nothing has improved in this iteration -> done
+            if changed_vertices.is_empty() {
                 break;
             }
 
-            if i == n && changed {
+            // If there is a change in the *n*th iteration, we have a negative cycle
+            if i == n && !changed_vertices.is_empty() {
                 // negative cycle
                 return None;
             }
+
+            vertices = changed_vertices;
         }
 
         Some(SingleSourceShortestPaths::new(start, costs, predecessor))

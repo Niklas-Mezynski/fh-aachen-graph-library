@@ -40,6 +40,7 @@ where
         // Keep track of which vertex to visit next, by storing in a ordered data structure ("cheapest" first)
         let mut visit_next = BinaryHeap::new();
 
+        // Initialize the cost to the start vertex with 0
         costs.insert(
             start,
             <Backend::Edge as WeightedEdge>::WeightType::default(),
@@ -49,12 +50,14 @@ where
             start,
         )));
 
+        // For each cheapest, reachable node
         while let Some(Reverse(node_entry)) = visit_next.pop() {
+            // If already visited, continue
             if visited.contains(&node_entry.vertex_id) {
                 continue;
             }
 
-            // If we are visiting the goal node, we can stop as we already computed the shortest path to it
+            // If we are visiting the goal node, we can early stop as we already computed the shortest path to it
             if goal.as_ref() == Some(&node_entry.vertex_id) {
                 break;
             }
