@@ -31,9 +31,13 @@ where
         <Backend::Vertex as WithID>::IDType,
         <Backend::Edge as WeightedEdge>::WeightType,
     > {
-        let mut visited = FxHashSet::default();
+        // Final map of costs from start to each v
         let mut costs = FxHashMap::default();
+        // Which vertex was visited before each other. Can be used to reconstruct the exact path
         let mut predecessor = FxHashMap::default();
+        // Track visited vertices
+        let mut visited = FxHashSet::default();
+        // Keep track of which vertex to visit next, by storing in a ordered data structure ("cheapest" first)
         let mut visit_next = BinaryHeap::new();
 
         costs.insert(
@@ -56,15 +60,15 @@ where
             }
 
             // For each (unvisited) adjacent vertex, check if we can improve the cost
-            // TODO: Filter elements in the iterator
-            for (next_v, edge) in self.get_adjacent_vertices_with_edges(node_entry.vertex_id) {
-                let next_v = next_v.get_id();
-                if visited.contains(&next_v) {
-                    continue;
-                }
+            for (next_v, edge) in self
+                .get_adjacent_vertices_with_edges(node_entry.vertex_id)
+                .map(|(v, e)| (v.get_id(), e))
+                .filter(|(v, _e)| !visited.contains(v))
+            {
                 let new_cost = node_entry.cost + edge.get_weight();
                 match costs.entry(next_v) {
                     Occupied(existing_entry) => {
+                        // Check if we the cost to `next_v` can be improved
                         if new_cost < *existing_entry.get() {
                             *existing_entry.into_mut() = new_cost;
                             visit_next.push(Reverse(EdgeEntry::new(new_cost, next_v)));
@@ -72,6 +76,7 @@ where
                         }
                     }
                     Vacant(new_entry) => {
+                        // First time we visit `next_v` -> just insert the cost
                         new_entry.insert(new_cost);
                         visit_next.push(Reverse(EdgeEntry::new(new_cost, next_v)));
                         predecessor.insert(next_v, node_entry.vertex_id);
