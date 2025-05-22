@@ -18,10 +18,15 @@ where
 {
     /// Dijkstra's shortest path algorithm.
     ///
+    /// # Warning
+    /// This algorithm does only work with positive weights. The user must guarantee this.
+    /// Otherwise the result might be incorrect.
+    ///
     /// Compute the length of the shortest path from `start` to every reachable node.
     ///
     /// Returns a tuple with a `HashMap` that maps `VertexID` to path cost and
     /// a `HashMap` that maps `VertexID` to the predecessor `VertexID` that can be used to reconstruct the path.
+    ///
     ///
     pub fn dijkstra(
         &self,
