@@ -31,8 +31,11 @@ where
             <Backend::Edge as WeightedEdge>::WeightType,
         >,
     > {
+        // Final map of costs from start to each v
         let mut costs = FxHashMap::default();
+        // Which vertex was visited before each other. Can be used to reconstruct the exact path
         let mut predecessor = FxHashMap::default();
+
         let edges = self.get_all_edges().collect::<Vec<_>>();
 
         costs.insert(
@@ -41,9 +44,11 @@ where
         );
 
         let n = self.vertex_count();
+        // For |V| - 1 iterations, check all edges and see if we can decrease cost to any vertex
         for i in 1..=n {
             let mut changed = false;
             for (v, w, cost) in edges.iter() {
+                // Check if the edge (v, w) can improve the current "best" cost to vertex w
                 let cost_v = costs.get(v).copied();
                 let cost_w = costs.get(w).copied();
                 let new_cost = match (cost_v, cost_w) {
