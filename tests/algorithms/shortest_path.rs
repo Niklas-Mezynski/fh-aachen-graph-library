@@ -35,7 +35,8 @@ fn directed_positive_weights(
         Algorithms::Dijkstra => graph.dijkstra(from, None),
         Algorithms::BellmanFord => graph
             .bellman_ford(from)
-            .unwrap_or_else(|| panic!("Algorithm did not return a valid result")),
+            .into_spt()
+            .unwrap_or_else(|_e| panic!("Algorithm did not return a valid result")),
     };
 
     let cost = shortest_path
@@ -120,7 +121,8 @@ fn undirected(
         Algorithms::Dijkstra => graph.dijkstra(from, None),
         Algorithms::BellmanFord => graph
             .bellman_ford(from)
-            .unwrap_or_else(|| panic!("Algorithm did not return a valid result")),
+            .into_spt()
+            .unwrap_or_else(|_e| panic!("Algorithm did not return a valid result")),
     };
 
     let cost = shortest_path
@@ -168,7 +170,7 @@ fn directed_negative_weights(
 
     match expected_shortest_path_length {
         Some(expected) => {
-            let shortest_path = result.expect("Algorithm should find a result");
+            let shortest_path = result.into_spt().expect("Algorithm should find a result");
             let cost = shortest_path.get_cost(to).unwrap_or_else(|| {
                 panic!("Shortest path from {} to {} not found in graph", from, to)
             });
@@ -182,10 +184,17 @@ fn directed_negative_weights(
                 cost
             )
         }
-        None => assert!(
-            result.is_none(),
-            "For graph {}, expected to detect a negative cycle",
-            input_path
-        ),
+        None => {
+            let negative_cycle = result
+                .into_negative_cycle()
+                .expect("Algorithm should return a negative cycle");
+
+            dbg!(&negative_cycle);
+            assert!(
+                !negative_cycle.is_empty(),
+                "For graph {}, expected to detect a negative cycle",
+                input_path
+            )
+        }
     }
 }

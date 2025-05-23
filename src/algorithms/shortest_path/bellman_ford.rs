@@ -1,4 +1,5 @@
-use rustc_hash::FxHashMap;
+use enum_as_inner::EnumAsInner;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::hash::Hash;
 
 use crate::{
@@ -7,6 +8,13 @@ use crate::{
 };
 
 use super::single_source_shortest_paths::SingleSourceShortestPaths;
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumAsInner)]
+pub enum BellmanFordResult<VId: Hash + Eq, Cost> {
+    SPT(SingleSourceShortestPaths<VId, Cost>),
+    // Contains the vertices within the negative cycle
+    NegativeCycle(Vec<VId>),
+}
 
 impl<Backend> Graph<Backend>
 where
@@ -29,11 +37,9 @@ where
     pub fn bellman_ford(
         &self,
         start: <Backend::Vertex as WithID>::IDType,
-    ) -> Option<
-        SingleSourceShortestPaths<
-            <Backend::Vertex as WithID>::IDType,
-            <Backend::Edge as WeightedEdge>::WeightType,
-        >,
+    ) -> BellmanFordResult<
+        <Backend::Vertex as WithID>::IDType,
+        <Backend::Edge as WeightedEdge>::WeightType,
     > {
         // Final map of costs from start to each v
         let mut costs = FxHashMap::default();
@@ -97,12 +103,57 @@ where
             // If there is a change in the *n*th iteration, we have a negative cycle
             if i == n && !changed_vertices.is_empty() {
                 // negative cycle
-                return None;
+                let cycle = construct_negative_cycle(predecessor, changed_vertices[0]);
+                return BellmanFordResult::NegativeCycle(cycle);
             }
 
             vertices = changed_vertices;
         }
 
-        Some(SingleSourceShortestPaths::new(start, costs, predecessor))
+        BellmanFordResult::SPT(SingleSourceShortestPaths::new(start, costs, predecessor))
     }
+}
+
+fn construct_negative_cycle<VId>(predecessors: FxHashMap<VId, VId>, initial: VId) -> Vec<VId>
+where
+    VId: Hash + Eq + Copy,
+{
+    let mut visited = FxHashSet::default();
+    let mut current = initial;
+
+    // Follow the predecessor chain until we find a cycle
+    loop {
+        if visited.contains(&current) {
+            // We found the start of the cycle
+            break;
+        }
+        visited.insert(current);
+
+        if let Some(&pred) = predecessors.get(&current) {
+            current = pred;
+        } else {
+            // This shouldn't happen if we have a negative cycle
+            break;
+        }
+    }
+
+    // Now current is a vertex in the cycle
+    // Construct the cycle by following predecessors
+    let cycle_start = current;
+    let mut cycle = vec![cycle_start];
+
+    if let Some(&pred) = predecessors.get(&current) {
+        current = pred;
+        while current != cycle_start {
+            cycle.push(current);
+            if let Some(&pred) = predecessors.get(&current) {
+                current = pred;
+            } else {
+                break;
+            }
+        }
+    }
+
+    cycle.reverse(); // Reverse to get the cycle in forward direction
+    cycle
 }
