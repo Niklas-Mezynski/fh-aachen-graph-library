@@ -18,7 +18,7 @@ use super::{
 ///
 /// # See Also
 /// - [`Graph`]: The generic graph struct which contains detailed documentation for all public graph operations.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AdjacencyMatrixGraph<Vertex: WithID, Edge, Dir: Direction> {
     vertices: Vec<Vertex>,
     matrix: Vec<Vec<Option<Edge>>>,
@@ -87,6 +87,16 @@ where
         let from_idx: usize = from_id.into();
         let to_idx: usize = to_id.into();
         self.matrix[from_idx][to_idx].as_ref()
+    }
+
+    fn get_edge_mut_internal(
+        &mut self,
+        from_id: <Vertex as WithID>::IDType,
+        to_id: <Vertex as WithID>::IDType,
+    ) -> Option<&mut Edge> {
+        let from_idx: usize = from_id.into();
+        let to_idx: usize = to_id.into();
+        self.matrix[from_idx][to_idx].as_mut()
     }
 
     fn get_all_vertices_internal(&self) -> impl Iterator<Item = &Vertex> {
@@ -299,6 +309,14 @@ where
         self.get_edge_internal(from_id, to_id)
     }
 
+    fn get_edge_mut(
+        &mut self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&mut Self::Edge> {
+        self.get_edge_mut_internal(from_id, to_id)
+    }
+
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
     where
         Self::Vertex: 'a,
@@ -318,10 +336,35 @@ where
     where
         Self::Edge: 'a,
     {
+        // Iterate only upper triangle (including diagonal)
         self.matrix.iter().enumerate().flat_map(|(from, row)| {
             row.iter().enumerate().filter_map(move |(to, edge)| {
                 if from <= to {
                     edge.as_ref().map(|edge| (from.into(), to.into(), edge))
+                } else {
+                    None
+                }
+            })
+        })
+    }
+
+    fn get_all_edges_mut<'a>(
+        &'a mut self,
+    ) -> impl Iterator<
+        Item = (
+            <Self::Vertex as WithID>::IDType,
+            <Self::Vertex as WithID>::IDType,
+            &'a mut Self::Edge,
+        ),
+    >
+    where
+        Self::Edge: 'a,
+    {
+        // Iterate only upper triangle (including diagonal)
+        self.matrix.iter_mut().enumerate().flat_map(|(from, row)| {
+            row.iter_mut().enumerate().filter_map(move |(to, edge)| {
+                if from <= to {
+                    edge.as_mut().map(|edge| (from.into(), to.into(), edge))
                 } else {
                     None
                 }
@@ -480,6 +523,14 @@ where
         self.get_edge_internal(from_id, to_id)
     }
 
+    fn get_edge_mut(
+        &mut self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&mut Self::Edge> {
+        self.get_edge_mut_internal(from_id, to_id)
+    }
+
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
     where
         Self::Vertex: 'a,
@@ -502,6 +553,25 @@ where
         self.matrix.iter().enumerate().flat_map(|(from, row)| {
             row.iter().enumerate().filter_map(move |(to, edge)| {
                 edge.as_ref().map(|edge| (from.into(), to.into(), edge))
+            })
+        })
+    }
+
+    fn get_all_edges_mut<'a>(
+        &'a mut self,
+    ) -> impl Iterator<
+        Item = (
+            <Self::Vertex as WithID>::IDType,
+            <Self::Vertex as WithID>::IDType,
+            &'a mut Self::Edge,
+        ),
+    >
+    where
+        Self::Edge: 'a,
+    {
+        self.matrix.iter_mut().enumerate().flat_map(|(from, row)| {
+            row.iter_mut().enumerate().filter_map(move |(to, edge)| {
+                edge.as_mut().map(|edge| (from.into(), to.into(), edge))
             })
         })
     }

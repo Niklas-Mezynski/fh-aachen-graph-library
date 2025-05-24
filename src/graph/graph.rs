@@ -11,7 +11,7 @@ use delegate::delegate;
 
 use super::{adjacency_matrix::AdjacencyMatrixGraph, Directed, IntoDirected, Undirected};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Graph<Backend> {
     backend: Backend,
 }
@@ -92,6 +92,12 @@ where
                 to_id: <Self::Vertex as WithID>::IDType,
             ) -> Option<&Self::Edge>;
 
+            fn get_edge_mut(
+                &mut self,
+                from_id: <Self::Vertex as WithID>::IDType,
+                to_id: <Self::Vertex as WithID>::IDType,
+            ) -> Option<&mut Self::Edge>;
+
             fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
             where
                 Self::Vertex: 'a;
@@ -103,6 +109,18 @@ where
                     <Self::Vertex as WithID>::IDType,
                     <Self::Vertex as WithID>::IDType,
                     &'a Self::Edge,
+                ),
+            >
+            where
+                Self::Edge: 'a;
+
+            fn get_all_edges_mut<'a>(
+                &'a mut self,
+            ) -> impl Iterator<
+                Item = (
+                    <Self::Vertex as WithID>::IDType,
+                    <Self::Vertex as WithID>::IDType,
+                    &'a mut Self::Edge,
                 ),
             >
             where

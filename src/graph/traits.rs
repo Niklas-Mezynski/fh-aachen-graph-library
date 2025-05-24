@@ -100,6 +100,13 @@ pub trait GraphBase: Default {
         to_id: <Self::Vertex as WithID>::IDType,
     ) -> Option<&Self::Edge>;
 
+    /// Gets a mutable reference to the edge data between two vertices
+    fn get_edge_mut(
+        &mut self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&mut Self::Edge>;
+
     /// Get all vertices in the graph as an iterator.
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Self::Vertex>
     where
@@ -113,6 +120,19 @@ pub trait GraphBase: Default {
             <Self::Vertex as WithID>::IDType,
             <Self::Vertex as WithID>::IDType,
             &'a Self::Edge,
+        ),
+    >
+    where
+        Self::Edge: 'a;
+
+    /// Get an iterator over mutable references to all edges
+    fn get_all_edges_mut<'a>(
+        &'a mut self,
+    ) -> impl Iterator<
+        Item = (
+            <Self::Vertex as WithID>::IDType,
+            <Self::Vertex as WithID>::IDType,
+            &'a mut Self::Edge,
         ),
     >
     where

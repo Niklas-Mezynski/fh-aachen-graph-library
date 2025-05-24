@@ -8,7 +8,7 @@ use super::{
     Directed, Direction, IntoDirected, Undirected, WeightedEdge,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AdjacencyListGraph<Vertex: WithID, Edge, Dir: Direction> {
     vertices: FxHashMap<Vertex::IDType, Vertex>,
     adjacency: FxHashMap<Vertex::IDType, Vec<(Vertex::IDType, Edge)>>,
@@ -92,6 +92,17 @@ where
         self.adjacency
             .get(&from_id)
             .and_then(|edges| edges.iter().find(|(to, _)| to == &to_id))
+            .map(|(_, edge)| edge)
+    }
+
+    fn get_edge_mut_internal(
+        &mut self,
+        from_id: <Vertex as WithID>::IDType,
+        to_id: <Vertex as WithID>::IDType,
+    ) -> Option<&mut Edge> {
+        self.adjacency
+            .get_mut(&from_id)
+            .and_then(|edges| edges.iter_mut().find(|(to, _)| to == &to_id))
             .map(|(_, edge)| edge)
     }
 
@@ -253,6 +264,14 @@ where
         self.get_edge_internal(from_id, to_id)
     }
 
+    fn get_edge_mut(
+        &mut self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&mut Self::Edge> {
+        self.get_edge_mut_internal(from_id, to_id)
+    }
+
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
     where
         Vertex: 'a,
@@ -292,6 +311,28 @@ where
                 .iter()
                 .map(move |(to_id, edge)| (*from_id, *to_id, edge))
         })
+    }
+
+    fn get_all_edges_mut<'a>(
+        &'a mut self,
+    ) -> impl Iterator<
+        Item = (
+            <Self::Vertex as WithID>::IDType,
+            <Self::Vertex as WithID>::IDType,
+            &'a mut Self::Edge,
+        ),
+    >
+    where
+        Self::Edge: 'a,
+    {
+        self.adjacency
+            .iter_mut()
+            .flat_map(|(from_id, adjacency_list)| {
+                let from_id = *from_id;
+                adjacency_list
+                    .iter_mut()
+                    .map(move |(to_id, edge)| (from_id, *to_id, edge))
+            })
     }
 
     fn vertex_count(&self) -> usize {
@@ -398,6 +439,14 @@ where
         self.get_edge_internal(from_id, to_id)
     }
 
+    fn get_edge_mut(
+        &mut self,
+        from_id: <Self::Vertex as WithID>::IDType,
+        to_id: <Self::Vertex as WithID>::IDType,
+    ) -> Option<&mut Self::Edge> {
+        self.get_edge_mut_internal(from_id, to_id)
+    }
+
     fn get_all_vertices<'a>(&'a self) -> impl Iterator<Item = &'a Vertex>
     where
         Vertex: 'a,
@@ -441,6 +490,32 @@ where
                 }
             })
         })
+    }
+
+    fn get_all_edges_mut<'a>(
+        &'a mut self,
+    ) -> impl Iterator<
+        Item = (
+            <Self::Vertex as WithID>::IDType,
+            <Self::Vertex as WithID>::IDType,
+            &'a mut Self::Edge,
+        ),
+    >
+    where
+        Self::Edge: 'a,
+    {
+        self.adjacency
+            .iter_mut()
+            .flat_map(|(from_id, adjacency_list)| {
+                let from_id = *from_id;
+                adjacency_list.iter_mut().filter_map(move |(to_id, edge)| {
+                    if &from_id <= to_id {
+                        Some((from_id, *to_id, edge))
+                    } else {
+                        None
+                    }
+                })
+            })
     }
 
     fn vertex_count(&self) -> usize {
