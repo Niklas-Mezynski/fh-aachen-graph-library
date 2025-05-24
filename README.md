@@ -92,6 +92,16 @@ These benchmarks measure the time it takes to find the shortest path from a sing
 | G_1_20.txt       | 423.6 µs | 593.3 µs     | 738.9 µs              | 1.07 ms                   |
 | G_10_20.txt      | 1.16 ms  | 2.49 ms      | 1.87 ms               | 3.10 ms                   |
 
+### Maximum Flow Benchmarks
+
+These benchmarks measure the time it takes to find the maximum flow using the Edmonds-Karp algorithm. The `FlussX` graphs are directed flow networks, while `G_1_2.txt` is treated as a directed graph with the weights as capacities.
+
+| Input File | Edmonds-Karp |
+| ---------- | ------------ |
+| Fluss1.txt | 1.89 µs      |
+| Fluss2.txt | 4.47 µs      |
+| G_1_2.txt  | 887.55 µs    |
+
 ## Usage example
 
 ```rust
