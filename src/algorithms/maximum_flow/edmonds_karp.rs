@@ -42,7 +42,9 @@ where
         Flow: Default + Copy + PartialEq + PartialOrd + Sub<Output = Flow> + Add<Output = Flow>,
     {
         if start == target {
-            todo!()
+            return Err(GraphError::AlgorithmError(
+                "Start vertex and target vertex must be different".to_string(),
+            ));
         }
         // 1. Starte mit Fluss f(u, v) = 0 ∀(u, v) ∈ E
         // Set all flow values to 0
@@ -107,17 +109,20 @@ where
 
                 // Update all flows by the current value
                 path.windows(2).for_each(|window| {
-                    let edge = res
-                        .get_edge_mut(window[0], window[1])
-                        .expect("Edge must exist");
+                    let from = window[0];
+                    let to = window[1];
 
-                    if edge.is_residual {
-                        // Subtract min from flow, in the residual graph we have to add
-                        edge.flow = edge.flow + min;
-                    } else {
-                        // Vice versa
-                        edge.flow = edge.flow - min;
-                    }
+                    // Update the forward edge
+                    let forward_edge = res.get_edge_mut(from, to).expect("Edge must exist");
+                    // We subtract here because we are working with the residual graph, which represents the remaining capacity (which decreases now)
+                    forward_edge.flow = forward_edge.flow - min;
+
+                    // Update the corresponding backward edge
+                    let backward_edge = res
+                        .get_edge_mut(to, from)
+                        .expect("Backward edge must exist");
+                    // We add here, because the possible capacity in the backwards direction must increase
+                    backward_edge.flow = backward_edge.flow + min;
                 })
             } else {
                 // No path found, we are done
@@ -161,7 +166,6 @@ where
 
         let mut queue = VecDeque::from([start]);
         visited.insert(start);
-        pred.insert(start, start);
 
         // Modified bfs that also keeps track of paths (predecessors)
         'outer: while let Some(current) = queue.pop_front() {
