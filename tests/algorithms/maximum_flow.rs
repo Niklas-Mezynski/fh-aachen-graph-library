@@ -13,7 +13,7 @@ struct FlowEdge {
 #[rstest]
 #[case("resources/test_graphs/directed_flow/Fluss1.txt", 0, 7, 4.0)]
 #[case("resources/test_graphs/directed_flow/Fluss2.txt", 0, 7, 5.0)]
-// #[case("resources/test_graphs/undirected_weighted/G_1_2.txt", 0, 7, 0.75447)]
+#[case("resources/test_graphs/undirected_weighted/G_1_2.txt", 0, 7, 0.75447)]
 fn finds_max_flow(
     #[case] input_path: &str,
     #[case] start: u32,
@@ -46,6 +46,19 @@ fn finds_max_flow(
         .get_adjacent_vertices_with_edges(start)
         .map(|(_, edge)| edge.flow)
         .sum();
+
+    let incoming_flow: f64 = graph
+        .get_all_edges()
+        .filter(|(_, to, _)| to == &target)
+        .map(|(_, _, edge)| edge.flow)
+        .sum();
+
+    assert!(
+        (outgoing_flow - incoming_flow).abs() < 1e-5,
+        "Outgoing flow {} does not match incoming flow {}",
+        outgoing_flow,
+        incoming_flow
+    );
 
     assert!(
         (outgoing_flow - expected_max_flow).abs() < 1e-5,
