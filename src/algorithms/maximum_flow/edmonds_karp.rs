@@ -27,7 +27,7 @@ where
     /// Edmonds-Karp-Algorithm
     ///
     /// Returns ...
-    pub fn edmonds_karp<Flow, FlowFn, MaxFlowFn, ResBackend>(
+    pub fn edmonds_karp<ResBackend, Flow, FlowFn, MaxFlowFn>(
         &mut self,
         start: <Backend::Vertex as WithID>::IDType,
         target: <Backend::Vertex as WithID>::IDType,
@@ -36,13 +36,10 @@ where
     ) -> Result<(), GraphError<<Backend::Vertex as WithID>::IDType>>
     where
         FlowFn: Fn(&mut Backend::Edge) -> &mut Flow,
-        ResBackend: GraphBase<
-            Vertex = Backend::Vertex,
-            Edge = ResidualEdge<Flow>,
-            Direction = Backend::Direction,
-        >,
+        ResBackend:
+            GraphBase<Vertex = Backend::Vertex, Edge = ResidualEdge<Flow>, Direction = Directed>,
         MaxFlowFn: Fn(&Backend::Edge) -> &Flow,
-        Flow: Default + Copy + PartialEq + Ord + Sub<Output = Flow> + Add<Output = Flow>,
+        Flow: Default + Copy + PartialEq + PartialOrd + Sub<Output = Flow> + Add<Output = Flow>,
     {
         if start == target {
             todo!()
@@ -119,7 +116,7 @@ where
                         edge.flow = edge.flow + min;
                     } else {
                         // Vice versa
-                        edge.flow = edge.flow + min;
+                        edge.flow = edge.flow - min;
                     }
                 })
             } else {
