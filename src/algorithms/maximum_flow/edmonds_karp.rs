@@ -82,7 +82,7 @@ where
             )
             .collect();
 
-        let mut res = Graph::<ResBackend>::from_vertices_and_edges(
+        let mut residual_graph = Graph::<ResBackend>::from_vertices_and_edges(
             self.get_all_vertices().cloned().collect(),
             res_edges,
         )?;
@@ -90,14 +90,15 @@ where
         loop {
             // 3. Finde den kürzesten Weg (Anzahl der Kanten) von s zu t in Gf
             //    Wenn es keinen Weg gibt: Stoppe mit f
-            let path = Self::find_shortest_path::<Flow, ResBackend>(&res, start, target);
+            let path = Self::find_shortest_path::<Flow, ResBackend>(&residual_graph, start, target);
 
             if let Some(path) = path {
                 // 4. Verändere f entlang des identifizierten Wegs um die kleinste Kantenkapazität γ des Weges
                 let min = path
                     .windows(2)
                     .map(|window| {
-                        res.get_edge(window[0], window[1])
+                        residual_graph
+                            .get_edge(window[0], window[1])
                             .expect("Edge must exist")
                             .flow
                     })
@@ -113,12 +114,14 @@ where
                     let to = window[1];
 
                     // Update the forward edge
-                    let forward_edge = res.get_edge_mut(from, to).expect("Edge must exist");
+                    let forward_edge = residual_graph
+                        .get_edge_mut(from, to)
+                        .expect("Edge must exist");
                     // We subtract here because we are working with the residual graph, which represents the remaining capacity (which decreases now)
                     forward_edge.flow = forward_edge.flow - min;
 
                     // Update the corresponding backward edge
-                    let backward_edge = res
+                    let backward_edge = residual_graph
                         .get_edge_mut(to, from)
                         .expect("Backward edge must exist");
                     // We add here, because the possible capacity in the backwards direction must increase
@@ -133,7 +136,7 @@ where
         }
 
         // Apply flows found in residual graph to the main graph
-        for (from, to, edge) in res
+        for (from, to, edge) in residual_graph
             .get_all_edges()
             .filter(|(_from, _to, edge)| !edge.is_residual)
         {
@@ -149,7 +152,7 @@ where
 
     /// Find an shortest path (in terms of edge count) from start to target using BFS
     fn find_shortest_path<Flow, ResBackend>(
-        res: &Graph<ResBackend>,
+        residual_graph: &Graph<ResBackend>,
         start: <Backend::Vertex as WithID>::IDType,
         target: <Backend::Vertex as WithID>::IDType,
     ) -> Option<Vec<<Backend::Vertex as WithID>::IDType>>
@@ -169,7 +172,7 @@ where
 
         // Modified bfs that also keeps track of paths (predecessors)
         'outer: while let Some(current) = queue.pop_front() {
-            for (to, _edge) in res
+            for (to, _edge) in residual_graph
                 .get_adjacent_vertices_with_edges(current)
                 .filter(|(_, e)| e.flow != Flow::default())
             {
