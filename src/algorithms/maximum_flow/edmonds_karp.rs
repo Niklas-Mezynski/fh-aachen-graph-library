@@ -8,7 +8,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     graph::{GraphBase, WithID},
-    Directed, Graph, GraphError,
+    Directed, Graph, GraphError, ListGraph,
 };
 
 #[derive(Debug, Clone)]
@@ -21,13 +21,18 @@ impl<Backend> Graph<Backend>
 where
     Backend: GraphBase<Direction = Directed>,
     Backend::Vertex: Clone,
-    <Backend::Vertex as WithID>::IDType: Copy + Eq + Hash,
+    <Backend::Vertex as WithID>::IDType: Eq + Hash + PartialOrd + Copy,
     Backend::Edge: Clone,
 {
     /// Edmonds-Karp-Algorithm
     ///
-    /// Returns ...
-    pub fn edmonds_karp<ResBackend, Flow, FlowFn, MaxFlowFn>(
+    /// The algorithm assumes that the initial flow values are all equal to 0.
+    ///
+    /// It manipulates the graph's flow values in place
+    ///
+    /// Returns an `Ok` result if the algorithm executed successfully
+    /// or an `Err` result if not
+    pub fn edmonds_karp<Flow, FlowFn, MaxFlowFn>(
         &mut self,
         start: <Backend::Vertex as WithID>::IDType,
         target: <Backend::Vertex as WithID>::IDType,
@@ -36,8 +41,6 @@ where
     ) -> Result<(), GraphError<<Backend::Vertex as WithID>::IDType>>
     where
         FlowFn: Fn(&mut Backend::Edge) -> &mut Flow,
-        ResBackend:
-            GraphBase<Vertex = Backend::Vertex, Edge = ResidualEdge<Flow>, Direction = Directed>,
         MaxFlowFn: Fn(&Backend::Edge) -> &Flow,
         Flow: Default + Copy + PartialEq + PartialOrd + Sub<Output = Flow> + Add<Output = Flow>,
     {
@@ -46,11 +49,8 @@ where
                 "Start vertex and target vertex must be different".to_string(),
             ));
         }
-        // 1. Starte mit Fluss f(u, v) = 0 ∀(u, v) ∈ E
-        // Set all flow values to 0
-        // self.get_all_edges_mut()
-        //     .for_each(|(_, _, edge)| *flow(edge) = Flow::default());
 
+        // 1. Starte mit Fluss f(u, v) = 0 ∀(u, v) ∈ E
         // 2. Bestimme den Residualgraph Gf für f
         // Copy the original graph and perform all operations on this (residual) graph
         // Later we map back the edges to the original one
@@ -82,7 +82,7 @@ where
             )
             .collect();
 
-        let mut residual_graph = Graph::<ResBackend>::from_vertices_and_edges(
+        let mut residual_graph = ListGraph::from_vertices_and_edges(
             self.get_all_vertices().cloned().collect(),
             res_edges,
         )?;
@@ -90,7 +90,7 @@ where
         loop {
             // 3. Finde den kürzesten Weg (Anzahl der Kanten) von s zu t in Gf
             //    Wenn es keinen Weg gibt: Stoppe mit f
-            let path = Self::find_shortest_path::<Flow, ResBackend>(&residual_graph, start, target);
+            let path = Self::find_shortest_path::<Flow>(&residual_graph, start, target);
 
             if let Some(path) = path {
                 // 4. Verändere f entlang des identifizierten Wegs um die kleinste Kantenkapazität γ des Weges
@@ -144,6 +144,8 @@ where
                 .get_edge_mut(from, to)
                 .expect("Edge must also exist in original graph");
 
+            // As the residual graph contains the remaining potential,
+            // we subtract from the max flow
             *flow(edge_to_modify) = *max_flow(edge_to_modify) - edge.flow;
         }
 
@@ -151,17 +153,12 @@ where
     }
 
     /// Find an shortest path (in terms of edge count) from start to target using BFS
-    fn find_shortest_path<Flow, ResBackend>(
-        residual_graph: &Graph<ResBackend>,
+    fn find_shortest_path<Flow>(
+        residual_graph: &ListGraph<Backend::Vertex, ResidualEdge<Flow>, Backend::Direction>,
         start: <Backend::Vertex as WithID>::IDType,
         target: <Backend::Vertex as WithID>::IDType,
     ) -> Option<Vec<<Backend::Vertex as WithID>::IDType>>
     where
-        ResBackend: GraphBase<
-            Vertex = Backend::Vertex,
-            Edge = ResidualEdge<Flow>,
-            Direction = Backend::Direction,
-        >,
         Flow: Default + Copy + PartialEq,
     {
         let mut visited = FxHashSet::default();

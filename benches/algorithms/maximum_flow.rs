@@ -2,7 +2,7 @@ use std::hint::black_box;
 
 use criterion::Criterion;
 use graph_library::{
-    graph::{GraphBase, ListGraph, ListGraphBackend, Vertex},
+    graph::{GraphBase, ListGraph, Vertex},
     Directed,
 };
 
@@ -47,14 +47,12 @@ pub fn maximum_flow(c: &mut Criterion) {
                     edge.flow = 0.0;
                 }
 
-                black_box(
-                    graph.edmonds_karp::<ListGraphBackend<_, _, Directed>, _, _, _>(
-                        black_box(0),
-                        black_box(7),
-                        |e| &mut e.flow,
-                        |e| &e.max_flow,
-                    ),
-                )
+                black_box(graph.edmonds_karp(
+                    black_box(0),
+                    black_box(7),
+                    |e| &mut e.flow,
+                    |e| &e.max_flow,
+                ))
                 .expect("Algorithm should not error");
             });
         });

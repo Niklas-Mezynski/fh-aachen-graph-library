@@ -1,5 +1,4 @@
 use graph_library::graph::GraphBase;
-use graph_library::graph::ListGraphBackend;
 use graph_library::Directed;
 use graph_library::ListGraph;
 use rstest::rstest;
@@ -32,12 +31,7 @@ fn finds_max_flow(
         .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
     graph
-        .edmonds_karp::<ListGraphBackend<_, _, Directed>, _, _, _>(
-            start,
-            target,
-            |e| &mut e.flow,
-            |e| &e.max_flow,
-        )
+        .edmonds_karp(start, target, |e| &mut e.flow, |e| &e.max_flow)
         .expect("Error running algorithm");
 
     // The graph's flow values should be updated now
