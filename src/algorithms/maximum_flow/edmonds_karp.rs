@@ -24,13 +24,18 @@ where
     <Backend::Vertex as WithID>::IDType: Eq + Hash + PartialOrd + Copy,
     Backend::Edge: Clone,
 {
-    /// Edmonds-Karp-Algorithm
-    ///
+    /// Edmonds-Karp-Algorithm that finds the maximum flow from one vertex to another
     /// The algorithm assumes that the initial flow values are all equal to 0.
-    ///
     /// It manipulates the graph's flow values in place
     ///
-    /// Returns an `Ok` result if the algorithm executed successfully
+    /// # Parameters
+    /// - `start`: The start vertex where the flow originates from.
+    /// - `target`: The target vertex to which the flow should be
+    /// - `flow`: A getter function the returns a mutable reference to an edge's flow values
+    /// - `max_flow`: A getter function the returns a reference to an edge's max flow capacity
+    ///
+    /// # Returns
+    /// An `Ok` result if the algorithm executed successfully
     /// or an `Err` result if not
     pub fn edmonds_karp<Flow, FlowFn, MaxFlowFn>(
         &mut self,
