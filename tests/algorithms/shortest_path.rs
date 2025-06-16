@@ -22,7 +22,7 @@ fn directed_positive_weights(
     #[values(Algorithms::Dijkstra, Algorithms::BellmanFord)] algorithm: Algorithms,
 ) {
     let graph =
-        ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Directed>::from_hoever_file_with_edges(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
                     .parse()
@@ -67,7 +67,7 @@ fn directed_positive_weights_early_abort(
     #[values(Algorithms::Dijkstra)] algorithm: Algorithms,
 ) {
     let graph =
-        ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Directed>::from_hoever_file_with_edges(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
                     .parse()
@@ -106,7 +106,7 @@ fn undirected(
     #[values(Algorithms::Dijkstra, Algorithms::BellmanFord)] algorithm: Algorithms,
 ) {
     let graph: ListGraph<_, _, Directed> =
-        ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Undirected>::from_hoever_file_with_edges(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
                     .parse()
@@ -151,7 +151,7 @@ fn directed_negative_weights(
     #[values(Algorithms::BellmanFord)] algorithm: Algorithms,
 ) {
     let graph =
-        ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Directed>::from_hoever_file_with_edges(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
                     .parse()

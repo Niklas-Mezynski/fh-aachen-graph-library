@@ -9,7 +9,7 @@ use graph_library::{
 
 /// Create a graph from a file for benchmarking purposes
 fn create_test_graph(file: &str) -> ListGraph<Vertex, EdgeWithWeight, Undirected> {
-    ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+    ListGraph::<_, _, Undirected>::from_hoever_file_with_edges(file, |remaining| {
         EdgeWithWeight::new(
             remaining[0]
                 .parse()

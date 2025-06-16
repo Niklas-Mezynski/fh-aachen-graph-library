@@ -20,7 +20,7 @@ fn finds_max_flow(
     #[case] expected_max_flow: f64,
 ) {
     let mut graph =
-        ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Directed>::from_hoever_file_with_edges(input_path, |remaining| {
             FlowEdge {
                 max_flow: remaining[0]
                     .parse()

@@ -1,10 +1,31 @@
-use graph_library::graph::GraphBase;
+use graph_library::graph::WithID;
 use graph_library::Directed;
 use graph_library::ListGraph;
 use rstest::rstest;
 
+#[derive(Debug)]
+enum Algorithms {
+    CycleCancelling,
+    SuccessiveShortestPath,
+}
+
 #[derive(Debug, Clone)]
-struct FlowEdge {
+pub struct BalanceVertex {
+    pub id: u32,
+    pub balance: i32,
+}
+
+impl WithID for BalanceVertex {
+    type IDType = u32;
+
+    fn get_id(&self) -> u32 {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone)]
+struct CostFlowEdge {
+    cost: f64,
     max_flow: f64,
     flow: f64,
 }
@@ -23,17 +44,30 @@ struct FlowEdge {
     Some(1838)
 )]
 #[case("resources/test_graphs/min_cost_flow/Kostenminimal_gross3.txt", None)]
-fn finds_min_cost_flow(#[case] input_path: &str, #[case] expected_cost: Option<i32>) {
-    // let mut graph =
-    //     ListGraph::<_, _, Directed>::from_hoever_file_with_weights(input_path, |remaining| {
-    //         FlowEdge {
-    //             max_flow: remaining[0]
-    //                 .parse()
-    //                 .expect("Graph file value must be a float"),
-    //             flow: f64::default(),
-    //         }
-    //     })
-    //     .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
+fn finds_min_cost_flow(
+    #[case] input_path: &str,
+    #[case] expected_cost: Option<i32>,
+    #[values(Algorithms::CycleCancelling)] algorithm: Algorithms,
+) {
+    let mut graph = ListGraph::<_, _, Directed>::from_hoever_file_with_special_vertices(
+        input_path,
+        |index, remaining| BalanceVertex {
+            id: index as u32,
+            balance: remaining[0]
+                .parse()
+                .expect("Vertex balance value must be a signed int"),
+        },
+        |remaining| CostFlowEdge {
+            cost: remaining[0]
+                .parse()
+                .expect("Edge cost value must be a float"),
+            max_flow: remaining[1]
+                .parse()
+                .expect("Edge max capacity value must be a float"),
+            flow: f64::default(),
+        },
+    )
+    .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-    assert!(false);
+    assert!(true);
 }

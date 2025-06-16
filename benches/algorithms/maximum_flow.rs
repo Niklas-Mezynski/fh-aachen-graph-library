@@ -14,7 +14,7 @@ struct FlowEdge {
 
 /// Create a directed flow graph from a file for benchmarking purposes
 fn create_directed_flow_graph(file: &str) -> ListGraph<Vertex, FlowEdge, Directed> {
-    ListGraph::<_, _, Directed>::from_hoever_file_with_weights(file, |remaining| FlowEdge {
+    ListGraph::<_, _, Directed>::from_hoever_file_with_edges(file, |remaining| FlowEdge {
         max_flow: remaining[0]
             .parse()
             .expect("Graph file value must be a float"),

@@ -25,7 +25,7 @@ fn mst(
     };
 
     let graph =
-        ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Undirected>::from_hoever_file_with_edges(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
                     .parse()

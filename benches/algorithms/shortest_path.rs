@@ -8,7 +8,7 @@ use graph_library::{
 
 /// Create a directed graph from a file for benchmarking purposes
 fn create_directed_graph(file: &str) -> ListGraph<Vertex, EdgeWithWeight, Directed> {
-    ListGraph::<_, _, Directed>::from_hoever_file_with_weights(file, |remaining| {
+    ListGraph::<_, _, Directed>::from_hoever_file_with_edges(file, |remaining| {
         EdgeWithWeight::new(
             remaining[0]
                 .parse()
@@ -20,7 +20,7 @@ fn create_directed_graph(file: &str) -> ListGraph<Vertex, EdgeWithWeight, Direct
 
 /// Create an undirected graph from a file and convert to directed in order to run the algorithm
 fn create_undirected_graph_as_directed(file: &str) -> ListGraph<Vertex, EdgeWithWeight, Directed> {
-    ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(file, |remaining| {
+    ListGraph::<_, _, Undirected>::from_hoever_file_with_edges(file, |remaining| {
         EdgeWithWeight::new(
             remaining[0]
                 .parse()

@@ -30,7 +30,7 @@ fn create_from_file_with_weights_creates_all_vertices(
     #[case] expected_vertices: usize,
 ) {
     let graph =
-        ListGraph::<_, _, Undirected>::from_hoever_file_with_weights(input_path, |remaining| {
+        ListGraph::<_, _, Undirected>::from_hoever_file_with_edges(input_path, |remaining| {
             EdgeWithWeight::new(
                 remaining[0]
                     .parse()
