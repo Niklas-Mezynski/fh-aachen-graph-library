@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct ResidualEdge<Flow> {
-    flow: Flow,
+    remaining_capacity: Flow,
     is_residual: bool,
 }
 
@@ -67,7 +67,7 @@ where
                     from,
                     to,
                     ResidualEdge {
-                        flow: *max_flow(edge),
+                        remaining_capacity: *max_flow(edge),
                         is_residual: false,
                     },
                 )
@@ -79,7 +79,7 @@ where
                         to,
                         from,
                         ResidualEdge {
-                            flow: Flow::default(),
+                            remaining_capacity: Flow::default(),
                             is_residual: true,
                         },
                     )
@@ -105,7 +105,7 @@ where
                         residual_graph
                             .get_edge(window[0], window[1])
                             .expect("Edge must exist")
-                            .flow
+                            .remaining_capacity
                     })
                     .min_by(|this, other| {
                         this.partial_cmp(other)
@@ -123,14 +123,14 @@ where
                         .get_edge_mut(from, to)
                         .expect("Edge must exist");
                     // We subtract here because we are working with the residual graph, which represents the remaining capacity (which decreases now)
-                    forward_edge.flow = forward_edge.flow - min;
+                    forward_edge.remaining_capacity = forward_edge.remaining_capacity - min;
 
                     // Update the corresponding backward edge
                     let backward_edge = residual_graph
                         .get_edge_mut(to, from)
                         .expect("Backward edge must exist");
                     // We add here, because the possible capacity in the backwards direction must increase
-                    backward_edge.flow = backward_edge.flow + min;
+                    backward_edge.remaining_capacity = backward_edge.remaining_capacity + min;
                 })
             } else {
                 // No path found, we are done
@@ -151,7 +151,7 @@ where
 
             // As the residual graph contains the remaining potential,
             // we subtract from the max flow
-            *flow(edge_to_modify) = *max_flow(edge_to_modify) - edge.flow;
+            *flow(edge_to_modify) = *max_flow(edge_to_modify) - edge.remaining_capacity;
         }
 
         Ok(())
@@ -176,7 +176,7 @@ where
         'outer: while let Some(current) = queue.pop_front() {
             for (to, _edge) in residual_graph
                 .get_adjacent_vertices_with_edges(current)
-                .filter(|(_, e)| e.flow != Flow::default())
+                .filter(|(_, e)| e.remaining_capacity != Flow::default())
             {
                 let to = to.get_id();
                 if !visited.contains(&to) {
