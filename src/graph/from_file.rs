@@ -37,6 +37,7 @@ where
                     "The file must contain at least one line with the number of edges".to_string(),
                 )
             })?
+            .trim()
             .parse::<<Backend::Vertex as WithID>::IDType>()
             .map_err(|_e| {
                 GraphError::ParseError("Cannot parse number of vertices (1st line)".to_string())

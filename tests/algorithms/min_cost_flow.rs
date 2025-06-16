@@ -12,7 +12,7 @@ enum Algorithms {
 #[derive(Debug, Clone)]
 pub struct BalanceVertex {
     pub id: u32,
-    pub balance: i32,
+    pub balance: f32,
 }
 
 impl WithID for BalanceVertex {
@@ -25,9 +25,9 @@ impl WithID for BalanceVertex {
 
 #[derive(Debug, Clone)]
 struct CostFlowEdge {
-    cost: f64,
-    max_flow: f64,
-    flow: f64,
+    cost: f32,
+    max_flow: f32,
+    flow: f32,
 }
 
 #[rstest]
@@ -55,7 +55,7 @@ fn finds_min_cost_flow(
             id: index as u32,
             balance: remaining[0]
                 .parse()
-                .expect("Vertex balance value must be a signed int"),
+                .expect("Vertex balance value must be a float"),
         },
         |remaining| CostFlowEdge {
             cost: remaining[0]
@@ -64,10 +64,10 @@ fn finds_min_cost_flow(
             max_flow: remaining[1]
                 .parse()
                 .expect("Edge max capacity value must be a float"),
-            flow: f64::default(),
+            flow: f32::default(),
         },
     )
     .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
 
-    assert!(true);
+    assert!(false);
 }
