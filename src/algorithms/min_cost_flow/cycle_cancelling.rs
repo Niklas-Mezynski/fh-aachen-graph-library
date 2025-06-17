@@ -1,11 +1,8 @@
 use std::{
-    collections::VecDeque,
     hash::Hash,
     iter::Sum,
     ops::{Add, AddAssign, Div, Mul, Neg, Sub},
 };
-
-use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
     algorithms::shortest_path::bellman_ford::BellmanFordResult,
@@ -18,6 +15,7 @@ pub struct ResidualEdge<Flow, Cost> {
     remaining_capacity: Flow,
     cost: Cost,
     is_residual: bool,
+    is_helper: bool,
 }
 
 impl<Flow, Cost> WeightedEdge for ResidualEdge<Flow, Cost>
@@ -140,7 +138,7 @@ where
         // Run Edmonds-Karp-Algorithm algorithm
         super_graph
             .edmonds_karp(super_source_id, super_target_id, &flow_mut, &max_flow)
-            .map_err(|e| {
+            .map_err(|_e| {
                 GraphError::AlgorithmError("Error running Edmonds-Karp-Algorithm".to_string())
             })?;
 
@@ -148,7 +146,7 @@ where
         // -> Validate that super source's outgoing capacities are fully utilized
         super_graph
             .get_adjacent_vertices_with_edges(super_source_id)
-            .try_for_each(|(to, edge)| {
+            .try_for_each(|(_to, edge)| {
                 if flow(edge) != max_flow(edge) {
                     return Err(GraphError::AlgorithmError("".to_string()));
                 }
@@ -169,6 +167,7 @@ where
                             remaining_capacity: *max_flow(edge) - *flow(edge),
                             cost: *cost(edge),
                             is_residual: false,
+                            is_helper: false,
                         },
                     ),
                     (
@@ -178,6 +177,7 @@ where
                             remaining_capacity: *flow(edge),
                             cost: -(*cost(edge)),
                             is_residual: true,
+                            is_helper: false,
                         },
                     ),
                 ]
@@ -204,16 +204,18 @@ where
                     cost: Cost::default(),
                     remaining_capacity: Flow::default(),
                     is_residual: true,
+                    is_helper: true,
                 },
             )
         })?;
 
         // --- Now we try to optimize the cost ---
         // We execute the Moore-Bellman-Ford-Algorithm in order to check for a negative cycle in this graph
+        let i = 0;
         while let BellmanFordResult::NegativeCycle(negative_cycle) = residual_graph
             .bellman_ford_with_edge_filter(super_source_id, |(_, _, edge)| {
                 // Only run bellman ford on edges with residual capacity != 0
-                edge.remaining_capacity > Flow::default()
+                edge.remaining_capacity > Flow::default() || edge.is_helper
             })
         {
             // Find the smallest residual capacity among the cycle
@@ -255,7 +257,7 @@ where
         // Apply flows found in residual graph to the main graph
         for (from, to, edge) in residual_graph
             .get_all_edges()
-            .filter(|(_from, _to, edge)| !edge.is_residual)
+            .filter(|(_from, _to, edge)| !edge.is_residual && !edge.is_helper)
         {
             let edge_to_modify = self
                 .get_edge_mut(from, to)

@@ -78,7 +78,7 @@ where
         let n = self.vertex_count();
         // For |V| - 1 iterations, check all edges and see if we can decrease cost to any vertex
         for i in 1..=n {
-            let mut changed_vertices = vec![];
+            let mut changed_vertices = FxHashSet::default();
 
             // Get all outgoing edges from `vertices`
             // We basically only check those vertices, where the cost has improved in the last iteration
@@ -111,7 +111,7 @@ where
                 if let Some(new_cost) = new_cost {
                     costs.insert(w, new_cost);
                     predecessor.insert(w, v);
-                    changed_vertices.push(w);
+                    changed_vertices.insert(w);
                 }
             }
 
@@ -123,11 +123,17 @@ where
             // If there is a change in the *n*th iteration, we have a negative cycle
             if i == n && !changed_vertices.is_empty() {
                 // negative cycle
-                let cycle = construct_negative_cycle(predecessor, changed_vertices[0]);
+                let cycle = construct_negative_cycle(
+                    predecessor,
+                    changed_vertices
+                        .into_iter()
+                        .next()
+                        .expect("Set cannot be empty"),
+                );
                 return BellmanFordResult::NegativeCycle(cycle);
             }
 
-            vertices = changed_vertices;
+            vertices = changed_vertices.into_iter().collect();
         }
 
         BellmanFordResult::SPT(SingleSourceShortestPaths::new(start, costs, predecessor))
@@ -153,7 +159,7 @@ where
             current = pred;
         } else {
             // This shouldn't happen if we have a negative cycle
-            break;
+            panic!("Not a negative cycle")
         }
     }
 
@@ -173,6 +179,9 @@ where
             }
         }
     }
+
+    // Add the start once more
+    cycle.push(cycle_start);
 
     cycle.reverse(); // Reverse to get the cycle in forward direction
     cycle

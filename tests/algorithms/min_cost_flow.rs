@@ -14,7 +14,7 @@ enum Algorithms {
 #[derive(Debug, Clone)]
 pub struct BalanceVertex {
     pub id: i32,
-    pub balance: f32,
+    pub balance: i32,
 }
 
 impl WithID for BalanceVertex {
@@ -27,9 +27,9 @@ impl WithID for BalanceVertex {
 
 #[derive(Debug, Clone)]
 struct CostFlowEdge {
-    cost: f32,
-    max_flow: f32,
-    flow: f32,
+    cost: i32,
+    max_flow: i32,
+    flow: i32,
 }
 
 #[rstest]
@@ -56,17 +56,26 @@ fn finds_min_cost_flow(
         |index, remaining| BalanceVertex {
             id: index as i32,
             balance: remaining[0]
+                .split(".")
+                .next()
+                .unwrap()
                 .parse()
-                .expect("Vertex balance value must be a float"),
+                .expect("Vertex balance value must be an int"),
         },
         |remaining| CostFlowEdge {
             cost: remaining[0]
+                .split(".")
+                .next()
+                .unwrap()
                 .parse()
-                .expect("Edge cost value must be a float"),
+                .expect("Edge cost value must be an int"),
             max_flow: remaining[1]
+                .split(".")
+                .next()
+                .unwrap()
                 .parse()
-                .expect("Edge max capacity value must be a float"),
-            flow: f32::default(),
+                .expect("Edge max capacity value must be an int"),
+            flow: i32::default(),
         },
     )
     .unwrap_or_else(|e| panic!("Graph could not be constructed from file: {:?}", e));
@@ -81,17 +90,17 @@ fn finds_min_cost_flow(
             [
                 BalanceVertex {
                     id: -1,
-                    balance: 0.0,
+                    balance: i32::default(),
                 },
                 BalanceVertex {
                     id: -2,
-                    balance: 0.0,
+                    balance: i32::default(),
                 },
             ],
             |balance| CostFlowEdge {
-                cost: 0.0,
+                cost: i32::default(),
                 max_flow: balance,
-                flow: 0.0,
+                flow: i32::default(),
             },
         ),
         Algorithms::SuccessiveShortestPath => todo!(),
@@ -103,12 +112,12 @@ fn finds_min_cost_flow(
 
             // Assert all balances are fulfilled
             for v in graph.get_all_vertices() {
-                let outgoing_flow: f32 = graph
+                let outgoing_flow: i32 = graph
                     .get_adjacent_vertices_with_edges(v.get_id())
                     .map(|(_, edge)| edge.flow)
                     .sum();
 
-                let incoming_flow: f32 = graph
+                let incoming_flow: i32 = graph
                     .get_all_edges()
                     .filter(|(_, to, _)| to == &v.get_id())
                     .map(|(_, _, edge)| edge.flow)
@@ -118,18 +127,16 @@ fn finds_min_cost_flow(
             }
 
             // Assert costs
-            let total_cost: f32 = graph
+            let total_cost: i32 = graph
                 .get_all_edges()
                 .map(|(_from, _to, edge)| edge.cost * edge.flow)
                 .sum();
 
-            assert_eq!(expected_cost as f32, total_cost);
+            assert_eq!(expected_cost, total_cost);
         }
         None => {
             assert!(result.is_err());
             assert!(matches!(result.unwrap_err(), GraphError::AlgorithmError(_)))
         }
     }
-
-    assert!(true);
 }
