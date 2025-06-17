@@ -43,7 +43,32 @@ where
     <Backend::Vertex as WithID>::IDType: Eq + Hash + PartialOrd + Copy,
     Backend::Edge: Clone,
 {
-    /// TODO...
+    /// Executes the cycle cancelling algorithm to find a minimum-cost flow in the network.
+    ///
+    /// This function first checks that the sum of all balances is zero, ensuring that the flow problem is possible.
+    /// It then augments the graph with a super source and super target to fulfill balance requirements using a max flow algorithm.
+    /// After ensuring all balances are satisfied, it constructs a residual graph and repeatedly searches for negative cost cycles,
+    /// cancelling them to optimize the total cost of the flow. The final flow is then applied back to the original graph.
+    ///
+    /// # Parameters
+    /// - `balance`: Function to get the balance of a vertex.
+    /// - `flow`: Function to get the flow of an edge.
+    /// - `flow_mut`: Function to get mutable access to the flow of an edge.
+    /// - `max_flow`: Function to get the maximum flow of an edge.
+    /// - `cost`: Function to get the cost of an edge.
+    /// - `[super_source, super_target]`: Array containing the super source and super target vertices. This must be provided with a unique vertex id.
+    /// - `cost_edge_builder`: Function to construct an edge from a given balance. The balance must be used for the `max_flow` value of the edge. The other values can be arbitrary or 0
+    ///
+    /// # Returns
+    /// Returns `Ok(())` if the algorithm completes successfully, or a `GraphError` if the balance requirements cannot be fulfilled or if an error occurs during the algorithm.
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - The sum of all balances is not zero.
+    /// - The max flow algorithm fails to fulfill all balance requirements.
+    /// - Any internal step of the algorithm fails.
+    ///
+    #[allow(clippy::too_many_arguments)]
     pub fn cycle_cancelling<
         Flow,
         Cost,
