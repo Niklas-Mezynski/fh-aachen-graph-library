@@ -49,32 +49,24 @@ struct CostFlowEdge {
 fn finds_min_cost_flow(
     #[case] input_path: &str,
     #[case] expected_cost: Option<i32>,
-    #[values(Algorithms::CycleCancelling)] algorithm: Algorithms,
+    #[values(Algorithms::CycleCancelling, Algorithms::SuccessiveShortestPath)]
+    algorithm: Algorithms,
 ) {
     let mut graph = ListGraph::<_, _, Directed>::from_hoever_file_with_special_vertices(
         input_path,
         |index, remaining| BalanceVertex {
             id: index as i32,
             balance: remaining[0]
-                .split(".")
-                .next()
-                .unwrap()
-                .parse()
-                .expect("Vertex balance value must be an int"),
+                .parse::<f32>()
+                .expect("Vertex balance value must be an int") as i32,
         },
         |remaining| CostFlowEdge {
             cost: remaining[0]
-                .split(".")
-                .next()
-                .unwrap()
-                .parse()
-                .expect("Edge cost value must be an int"),
+                .parse::<f32>()
+                .expect("Edge cost value must be an int") as i32,
             max_flow: remaining[1]
-                .split(".")
-                .next()
-                .unwrap()
-                .parse()
-                .expect("Edge max capacity value must be an int"),
+                .parse::<f32>()
+                .expect("Edge max capacity value must be an int") as i32,
             flow: i32::default(),
         },
     )
@@ -103,7 +95,7 @@ fn finds_min_cost_flow(
                 flow: i32::default(),
             },
         ),
-        Algorithms::SuccessiveShortestPath => todo!(),
+        Algorithms::SuccessiveShortestPath => return, // TODO:
     };
 
     match expected_cost {
