@@ -211,7 +211,6 @@ where
 
         // --- Now we try to optimize the cost ---
         // We execute the Moore-Bellman-Ford-Algorithm in order to check for a negative cycle in this graph
-        let i = 0;
         while let BellmanFordResult::NegativeCycle(negative_cycle) = residual_graph
             .bellman_ford_with_edge_filter(super_source_id, |(_, _, edge)| {
                 // Only run bellman ford on edges with residual capacity != 0
