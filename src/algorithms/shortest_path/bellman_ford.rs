@@ -33,7 +33,6 @@ where
     ///
     /// Returns a tuple with a `HashMap` that maps `VertexID` to path cost and
     /// a `HashMap` that maps `VertexID` to the predecessor `VertexID` that can be used to reconstruct the path.
-    #[allow(clippy::type_complexity)]
     pub fn bellman_ford(
         &self,
         start: <Backend::Vertex as WithID>::IDType,
@@ -41,6 +40,26 @@ where
         <Backend::Vertex as WithID>::IDType,
         <Backend::Edge as WeightedEdge>::WeightType,
     > {
+        self.bellman_ford_with_edge_filter(start, |_| true)
+    }
+
+    pub fn bellman_ford_with_edge_filter<EdgeFilterFn>(
+        &self,
+        start: <Backend::Vertex as WithID>::IDType,
+        edge_filter: EdgeFilterFn,
+    ) -> BellmanFordResult<
+        <Backend::Vertex as WithID>::IDType,
+        <Backend::Edge as WeightedEdge>::WeightType,
+    >
+    where
+        EdgeFilterFn: Fn(
+            &(
+                <Backend::Vertex as WithID>::IDType,
+                <Backend::Vertex as WithID>::IDType,
+                &Backend::Edge,
+            ),
+        ) -> bool,
+    {
         // Final map of costs from start to each v
         let mut costs = FxHashMap::default();
         // Which vertex was visited before each other. Can be used to reconstruct the exact path
@@ -66,6 +85,7 @@ where
             for (v, w, edge) in vertices.iter().flat_map(|v| {
                 self.get_adjacent_vertices_with_edges(*v)
                     .map(|(w, e)| (*v, w.get_id(), e))
+                    .filter(&edge_filter)
             }) {
                 // Check if the edge (v, w) can improve the current "best" cost to vertex w
                 let cost_v = costs.get(&v).copied();

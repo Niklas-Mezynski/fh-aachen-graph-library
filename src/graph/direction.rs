@@ -1,9 +1,9 @@
 pub trait Direction: 'static + Sized {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Directed;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Undirected;
 
 impl Direction for Directed {}
