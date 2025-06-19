@@ -145,6 +145,77 @@ where
     }
 }
 
+pub struct BfsIterWithFilter<'a, Backend, F>
+where
+    Backend: GraphBase,
+    F: Fn(&Backend::Edge) -> bool,
+{
+    graph: &'a Graph<Backend>,
+    queue: VecDeque<<Backend::Vertex as WithID>::IDType>,
+    visited: FxHashSet<<Backend::Vertex as WithID>::IDType>,
+    edge_filter: F,
+}
+
+impl<'a, Backend, F> BfsIterWithFilter<'a, Backend, F>
+where
+    Backend: GraphBase,
+    Backend::Vertex: WithID,
+    <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
+    F: Fn(&Backend::Edge) -> bool,
+{
+    fn new(
+        graph: &'a Graph<Backend>,
+        start_vertex: <Backend::Vertex as WithID>::IDType,
+        edge_filter: F,
+    ) -> Result<Self, GraphError<<Backend::Vertex as WithID>::IDType>> {
+        graph
+            .get_vertex_by_id(start_vertex)
+            .ok_or(GraphError::VertexNotFound(start_vertex))?;
+
+        let queue = VecDeque::from([start_vertex]);
+
+        let mut visited = FxHashSet::default();
+        visited.insert(start_vertex);
+
+        Ok(BfsIterWithFilter {
+            graph,
+            queue,
+            visited,
+            edge_filter,
+        })
+    }
+}
+
+impl<'a, Backend, F> Iterator for BfsIterWithFilter<'a, Backend, F>
+where
+    Backend: GraphBase,
+    Backend::Vertex: WithID,
+    <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
+    F: Fn(&Backend::Edge) -> bool,
+{
+    type Item = &'a Backend::Vertex;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(next_id) = self.queue.pop_front() {
+            let neighbors_with_edges = self.graph.get_adjacent_vertices_with_edges(next_id);
+
+            for (v, _edge) in neighbors_with_edges.filter(|(_, edge)| (self.edge_filter)(edge)) {
+                let vid = v.get_id();
+                if !self.visited.contains(&vid) {
+                    self.visited.insert(vid);
+                    self.queue.push_back(vid);
+                }
+            }
+
+            Some(self.graph.get_vertex_by_id(next_id).expect(
+                "get_vertex_by_id should not error as the vertices in the queue must exist",
+            ))
+        } else {
+            None
+        }
+    }
+}
+
 impl<Backend> Graph<Backend>
 where
     Backend: GraphBase,
@@ -167,5 +238,16 @@ where
         <Backend::Vertex as WithID>::IDType: Eq + Hash + Copy,
     {
         BfsIterMut::new(self, start_vertex)
+    }
+
+    pub fn bfs_iter_with_filter<F>(
+        &self,
+        start_vertex: <Backend::Vertex as WithID>::IDType,
+        edge_filter: F,
+    ) -> Result<BfsIterWithFilter<'_, Backend, F>, GraphError<<Backend::Vertex as WithID>::IDType>>
+    where
+        F: Fn(&Backend::Edge) -> bool,
+    {
+        BfsIterWithFilter::new(self, start_vertex, edge_filter)
     }
 }

@@ -95,7 +95,12 @@ fn finds_min_cost_flow(
                 flow: i32::default(),
             },
         ),
-        Algorithms::SuccessiveShortestPath => return, // TODO:
+        Algorithms::SuccessiveShortestPath => graph.successive_shortest_path(
+            |v| &v.balance,
+            |e| &mut e.flow,
+            |e| &e.max_flow,
+            |e| &e.cost,
+        ),
     };
 
     match expected_cost {
