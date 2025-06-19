@@ -25,6 +25,7 @@ criterion_group!(
         tsp::tsp,
         shortest_path::shortest_path,
         maximum_flow::maximum_flow,
+        min_cost_flow::min_cost_flow,
 );
 
 /// Vertex representation for testing, implements the required traits

@@ -102,6 +102,17 @@ These benchmarks measure the time it takes to find the maximum flow using the Ed
 | Fluss2.txt | 4.47 µs      |
 | G_1_2.txt  | 887.55 µs    |
 
+### Min Cost Flow Benchmarks
+
+These benchmarks measure the time it takes to find the minimum cost flow using two different algorithms: Cycle Cancelling and Successive Shortest Path. The `KostenminimalX` graphs are min cost flow networks with vertex balances and edge costs.
+
+| Input File               | Cycle Cancelling | Successive Shortest Path |
+| ------------------------ | ---------------- | ------------------------ |
+| Kostenminimal1.txt       | 4.51 µs          | 3.26 µs                  |
+| Kostenminimal2.txt       | 3.32 µs          | 2.23 µs                  |
+| Kostenminimal_gross1.txt | 95.93 ms         | 18.87 ms                 |
+| Kostenminimal_gross2.txt | 103.42 ms        | 18.38 ms                 |
+
 ## Usage example
 
 ```rust
