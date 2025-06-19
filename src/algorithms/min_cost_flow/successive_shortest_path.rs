@@ -4,6 +4,8 @@ use std::{
     ops::{Add, AddAssign, Div, Mul, Neg, Sub},
 };
 
+use rustc_hash::FxHashMap;
+
 use crate::{
     algorithms::shortest_path::bellman_ford::BellmanFordResult,
     graph::{GraphBase, WeightedEdge, WithID},
@@ -149,20 +151,63 @@ where
 
         // Set all current balances
         // For each v: balance_curr = sum(outgoing flow) - sum(incoming flow)
-        for v in graph.get_all_vertices() {
-            let outgoing_flow: CFB = graph
-                .get_adjacent_vertices_with_edges(v.get_id())
-                .map(|(_, edge)| edge.flow)
-                .sum();
+        let balance_vec: Vec<_> = graph
+            .get_all_vertices()
+            .map(|v| {
+                let outgoing_flow: CFB = graph
+                    .get_adjacent_vertices_with_edges(v.get_id())
+                    .map(|(_, edge)| edge.flow)
+                    .sum();
 
-            let incoming_flow: CFB = graph
-                .get_all_edges()
-                .filter(|(_, to, _)| to == &v.get_id())
-                .map(|(_, _, edge)| edge.flow)
-                .sum();
+                let incoming_flow: CFB = graph
+                    .get_all_edges()
+                    .filter(|(_, to, _)| to == &v.get_id())
+                    .map(|(_, _, edge)| edge.flow)
+                    .sum();
 
-            v.balance_curr = outgoing_flow - incoming_flow;
+                (v.get_id(), outgoing_flow - incoming_flow)
+            })
+            .collect();
+
+        for (id, balance) in balance_vec {
+            graph.get_vertex_by_id_mut(id).unwrap().balance_curr = balance;
         }
+
+        // Create the residual graph
+        // Residual graph
+        let res_edges: Vec<_> = graph
+            .get_all_edges()
+            .flat_map(|(from, to, edge)| {
+                [
+                    (
+                        from,
+                        to,
+                        ResidualEdge {
+                            remaining_capacity: edge.max_flow - edge.flow,
+                            cost: edge.cost,
+                            is_residual: false,
+                            is_helper: false,
+                        },
+                    ),
+                    (
+                        to,
+                        from,
+                        ResidualEdge {
+                            remaining_capacity: edge.flow,
+                            cost: -(edge.cost),
+                            is_residual: true,
+                            is_helper: false,
+                        },
+                    ),
+                ]
+            })
+            .collect();
+
+        let mut residual_graph = ListGraph::<_, _, Backend::Direction>::from_vertices_and_edges(
+            // Take vertices from original graph (without super source and target)
+            graph.get_all_vertices().cloned().collect(),
+            res_edges,
+        )?;
 
         Ok(())
     }
